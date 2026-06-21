@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import axios from 'axios'
 import { useSessionStore } from '../store/useSessionStore'
 import { getRoles } from '../api/roles'
 import { postAnalyse } from '../api/analyse'
@@ -27,6 +28,12 @@ export default function RoleSelectionPage() {
       navigate('/gap-dashboard')
     },
   })
+
+  const errorMessage = mutation.error
+    ? axios.isAxiosError(mutation.error)
+      ? mutation.error.response?.data?.detail ?? mutation.error.message
+      : String(mutation.error)
+    : null
 
   useEffect(() => {
     if (!sessionId || !resumeText) navigate('/')
@@ -60,7 +67,7 @@ export default function RoleSelectionPage() {
             {roles.map((role) => (
               <li
                 key={role}
-                onClick={() => setSelectedRole(role)}
+                onClick={() => { setSelectedRole(role); setQuery(role) }}
                 className={`px-4 py-3 cursor-pointer hover:bg-blue-50 text-sm ${selectedRole === role ? 'bg-blue-100 font-semibold text-blue-800' : 'text-gray-700'}`}
               >
                 {role}
@@ -78,8 +85,11 @@ export default function RoleSelectionPage() {
         {mutation.isPending ? 'Analysing — this takes ~20 seconds...' : 'Analyse Skills Gap →'}
       </button>
 
-      {mutation.isError && (
-        <p className="text-red-500 mt-3 text-sm">Analysis failed. Please try again.</p>
+      {errorMessage && (
+        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700 text-sm font-medium">Analysis failed</p>
+          <p className="text-red-500 text-xs mt-1 font-mono break-all">{errorMessage}</p>
+        </div>
       )}
     </div>
   )
