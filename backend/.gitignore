@@ -1,0 +1,10 @@
+*.env
+sessions/*
+!sessions/.gitkeep
+logs/*
+!logs/.gitkeep
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+venv/

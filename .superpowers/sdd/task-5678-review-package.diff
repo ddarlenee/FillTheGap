@@ -1,0 +1,416 @@
+diff --git a/backend/services/career_ladder.py b/backend/services/career_ladder.py
+new file mode 100644
+index 0000000..108d834
+--- /dev/null
++++ b/backend/services/career_ladder.py
+@@ -0,0 +1,70 @@
++import json
++from openai import OpenAI
++from config import settings
++from models.schemas import ProgressRequest, ProgressResponse, CareerRung, Milestone
++from services.interaction_logger import log_interaction
++from data.skillsfuture_loader import skillsfuture
++
++openai_client = OpenAI(api_key=settings.openai_api_key)
++
++SYSTEM_PROMPT = """You are a career progression specialist with deep knowledge of Singapore's job market and SkillsFuture frameworks.
++Given a current role and the user's skills, infer a realistic vertical career progression ladder (2–4 future roles above the current one).
++
++For each future role provide:
++- role: exact role title
++- transferability_score: 0–100 (how much of user's current skills transfer)
++- skill_delta: list of new skills needed that the user doesn't currently have
++- why_good_fit: one sentence explaining transferability from user's background
++- milestones: 2–4 concrete, specific steps to reach THIS role from the previous rung (empty list for distant future roles)
++
++Also identify the long_term_destination: the most senior role this path leads toward.
++
++Return ONLY valid JSON:
++{
++  "long_term_destination": "...",
++  "ladder": [
++    {"role": "...", "transferability_score": 0, "skill_delta": [], "why_good_fit": "...", "milestones": [{"description": "...", "skill_focus": "..."}]}
++  ]
++}
++Order ladder from closest to most distant future role."""
++
++def build_career_ladder(request: ProgressRequest, session_id: str) -> ProgressResponse:
++    role_skills = skillsfuture.get_skills_for_role(request.current_role)
++    skills_context = ", ".join(role_skills[:15]) if role_skills else "not available"
++    user_skills_str = ", ".join(request.user_skill_names[:20])
++
++    prompt = (
++        f"Current role: {request.current_role}\n"
++        f"User's skills: {user_skills_str}\n"
++        f"SkillsFuture skills for this role: {skills_context}"
++    )
++
++    response = openai_client.chat.completions.create(
++        model="gpt-4o",
++        messages=[
++            {"role": "system", "content": SYSTEM_PROMPT},
++            {"role": "user", "content": prompt},
++        ],
++        response_format={"type": "json_object"},
++    )
++    content = response.choices[0].message.content
++    log_interaction(session_id, "career_ladder", prompt, content)
++    data = json.loads(content)
++
++    ladder = [
++        CareerRung(
++            role=r["role"],
++            transferability_score=r["transferability_score"],
++            skill_delta=r["skill_delta"],
++            why_good_fit=r["why_good_fit"],
++            milestones=[Milestone(**m) for m in r.get("milestones", [])],
++        )
++        for r in data["ladder"]
++    ]
++
++    return ProgressResponse(
++        current_role=request.current_role,
++        immediate_next=ladder[0],
++        full_ladder=ladder[1:],
++        long_term_destination=data["long_term_destination"],
++    )
+diff --git a/backend/services/gap_analyser.py b/backend/services/gap_analyser.py
+new file mode 100644
+index 0000000..e358e03
+--- /dev/null
++++ b/backend/services/gap_analyser.py
+@@ -0,0 +1,26 @@
++from models.schemas import ExtractedSkill, TieredSkill, GapItem, CoverageScore
++
++def analyse_gaps(
++    user_skills: list[ExtractedSkill],
++    tiered_role_skills: list[TieredSkill],
++) -> tuple[list[GapItem], CoverageScore]:
++    user_skill_names = {s.name.lower() for s in user_skills}
++    gaps: list[GapItem] = []
++    counts = {"Essential": [0, 0], "Important": [0, 0], "Nice-to-have": [0, 0]}
++
++    for ts in tiered_role_skills:
++        tier = ts.tier
++        counts[tier][1] += 1
++        if ts.name.lower() in user_skill_names:
++            counts[tier][0] += 1
++        else:
++            gaps.append(GapItem(skill=ts.name, tier=tier, action=""))
++
++    score = CoverageScore(
++        essential=f"{counts['Essential'][0]}/{counts['Essential'][1]}",
++        important=f"{counts['Important'][0]}/{counts['Important'][1]}",
++        nice_to_have=f"{counts['Nice-to-have'][0]}/{counts['Nice-to-have'][1]}",
++    )
++    tier_order = {"Essential": 0, "Important": 1, "Nice-to-have": 2}
++    gaps.sort(key=lambda g: tier_order.get(g.tier, 3))
++    return gaps, score
+diff --git a/backend/services/next_steps.py b/backend/services/next_steps.py
+new file mode 100644
+index 0000000..7b5c57f
+--- /dev/null
++++ b/backend/services/next_steps.py
+@@ -0,0 +1,28 @@
++import json
++from openai import OpenAI
++from config import settings
++from models.schemas import GapItem
++from services.interaction_logger import log_interaction
++
++openai_client = OpenAI(api_key=settings.openai_api_key)
++
++SYSTEM_PROMPT = """You are a career coach. Given a target role and a list of skill gaps,
++generate 3–5 concrete, specific, actionable next steps to close those gaps.
++Prioritise by gap tier (Essential > Important > Nice-to-have).
++Each step should be specific enough to act on today (e.g. name a specific course, certification, or project).
++Return ONLY valid JSON: {"next_steps": ["step 1", "step 2", ...]}"""
++
++def generate_next_steps(role: str, gaps: list[GapItem], session_id: str) -> list[str]:
++    gap_summary = "\n".join(f"- {g.skill} ({g.tier})" for g in gaps[:8])
++    prompt = f"Target role: {role}\nSkill gaps:\n{gap_summary}"
++    response = openai_client.chat.completions.create(
++        model="gpt-4o",
++        messages=[
++            {"role": "system", "content": SYSTEM_PROMPT},
++            {"role": "user", "content": prompt},
++        ],
++        response_format={"type": "json_object"},
++    )
++    content = response.choices[0].message.content
++    log_interaction(session_id, "next_steps", prompt, content)
++    return json.loads(content)["next_steps"]
+diff --git a/backend/services/skill_extractor.py b/backend/services/skill_extractor.py
+new file mode 100644
+index 0000000..cb99bc7
+--- /dev/null
++++ b/backend/services/skill_extractor.py
+@@ -0,0 +1,31 @@
++import json
++from openai import OpenAI
++from config import settings
++from models.schemas import ExtractedSkill
++from services.interaction_logger import log_interaction
++
++openai_client = OpenAI(api_key=settings.openai_api_key)
++
++SYSTEM_PROMPT = """You are a skills analyst. Given a resume, extract every professional skill mentioned.
++For each skill, provide:
++- name: concise skill name (e.g. "Python", "Stakeholder Management")
++- evidence: the exact resume text or paraphrase that proves this skill, with context
++- confidence: "High" if clearly demonstrated, "Medium" if implied, "Low" if tangential
++
++Return ONLY valid JSON in this exact format:
++{"skills": [{"name": "...", "evidence": "...", "confidence": "High|Medium|Low"}]}"""
++
++def extract_skills(resume_text: str, session_id: str) -> list[ExtractedSkill]:
++    prompt = f"Resume:\n{resume_text}"
++    response = openai_client.chat.completions.create(
++        model="gpt-4o",
++        messages=[
++            {"role": "system", "content": SYSTEM_PROMPT},
++            {"role": "user", "content": prompt},
++        ],
++        response_format={"type": "json_object"},
++    )
++    content = response.choices[0].message.content
++    log_interaction(session_id, "skill_extraction", prompt, content)
++    data = json.loads(content)
++    return [ExtractedSkill(**s) for s in data["skills"]]
+diff --git a/backend/services/skill_ranker.py b/backend/services/skill_ranker.py
+new file mode 100644
+index 0000000..704d040
+--- /dev/null
++++ b/backend/services/skill_ranker.py
+@@ -0,0 +1,32 @@
++import json
++from openai import OpenAI
++from config import settings
++from models.schemas import TieredSkill
++from services.interaction_logger import log_interaction
++
++openai_client = OpenAI(api_key=settings.openai_api_key)
++
++SYSTEM_PROMPT = """You are a career specialist with expertise in Singapore's job market.
++Given a job role and its list of skills, rank each skill into exactly one tier:
++- Essential: must-have for day-one performance
++- Important: significantly boosts effectiveness
++- Nice-to-have: helpful but not critical
++
++Return ONLY valid JSON:
++{"tiered_skills": [{"name": "...", "tier": "Essential|Important|Nice-to-have", "reasoning": "..."}]}
++Include ALL provided skills in your response."""
++
++def rank_skills(role: str, skills: list[str], session_id: str) -> list[TieredSkill]:
++    prompt = f"Role: {role}\nSkills to rank:\n" + "\n".join(f"- {s}" for s in skills)
++    response = openai_client.chat.completions.create(
++        model="gpt-4o",
++        messages=[
++            {"role": "system", "content": SYSTEM_PROMPT},
++            {"role": "user", "content": prompt},
++        ],
++        response_format={"type": "json_object"},
++    )
++    content = response.choices[0].message.content
++    log_interaction(session_id, "skill_ranking", prompt, content)
++    data = json.loads(content)
++    return [TieredSkill(**s) for s in data["tiered_skills"]]
+diff --git a/backend/tests/test_career_ladder.py b/backend/tests/test_career_ladder.py
+new file mode 100644
+index 0000000..2a953f0
+--- /dev/null
++++ b/backend/tests/test_career_ladder.py
+@@ -0,0 +1,54 @@
++import json
++import pytest
++from unittest.mock import MagicMock, patch
++from models.schemas import ProgressRequest, ProgressResponse
++from services.career_ladder import build_career_ladder
++
++MOCK_LADDER_JSON = json.dumps({
++    "long_term_destination": "Principal Data Scientist",
++    "ladder": [
++        {
++            "role": "Senior Data Analyst",
++            "transferability_score": 72,
++            "skill_delta": ["Machine Learning", "Stakeholder Management"],
++            "why_good_fit": "High transferability from your analytics background",
++            "milestones": [
++                {"description": "Lead one end-to-end analytics project", "skill_focus": "Leadership"},
++                {"description": "Complete Andrew Ng ML course", "skill_focus": "Machine Learning"},
++            ]
++        },
++        {
++            "role": "Data Science Manager",
++            "transferability_score": 45,
++            "skill_delta": ["Team Leadership", "Budget Management"],
++            "why_good_fit": "Natural progression from senior analytics roles",
++            "milestones": []
++        }
++    ]
++})
++
++def make_mock_completion(content: str):
++    mock = MagicMock()
++    mock.choices[0].message.content = content
++    return mock
++
++def test_build_career_ladder_returns_progress_response():
++    req = ProgressRequest(current_role="Data Analyst", user_skill_names=["Python", "SQL"])
++    with patch("services.career_ladder.openai_client.chat.completions.create",
++               return_value=make_mock_completion(MOCK_LADDER_JSON)):
++        with patch("services.career_ladder.log_interaction"):
++            with patch("services.career_ladder.skillsfuture.get_skills_for_role", return_value=[]):
++                result = build_career_ladder(req, "test-session")
++    assert isinstance(result, ProgressResponse)
++    assert result.current_role == "Data Analyst"
++    assert result.immediate_next.role == "Senior Data Analyst"
++    assert result.long_term_destination == "Principal Data Scientist"
++
++def test_build_career_ladder_milestone_count():
++    req = ProgressRequest(current_role="Data Analyst", user_skill_names=["Python"])
++    with patch("services.career_ladder.openai_client.chat.completions.create",
++               return_value=make_mock_completion(MOCK_LADDER_JSON)):
++        with patch("services.career_ladder.log_interaction"):
++            with patch("services.career_ladder.skillsfuture.get_skills_for_role", return_value=[]):
++                result = build_career_ladder(req, "test-session")
++    assert len(result.immediate_next.milestones) == 2
+diff --git a/backend/tests/test_gap_analyser.py b/backend/tests/test_gap_analyser.py
+new file mode 100644
+index 0000000..b661670
+--- /dev/null
++++ b/backend/tests/test_gap_analyser.py
+@@ -0,0 +1,51 @@
++import json
++import pytest
++from unittest.mock import MagicMock, patch
++from models.schemas import ExtractedSkill, TieredSkill, GapItem
++from services.gap_analyser import analyse_gaps
++from services.next_steps import generate_next_steps
++
++USER_SKILLS = [
++    ExtractedSkill(name="Python", evidence="Used Python daily", confidence="High"),
++    ExtractedSkill(name="SQL", evidence="Queried databases", confidence="High"),
++]
++TIERED_SKILLS = [
++    TieredSkill(name="Python", tier="Essential", reasoning="Core language"),
++    TieredSkill(name="SQL", tier="Essential", reasoning="Data querying"),
++    TieredSkill(name="Machine Learning", tier="Important", reasoning="Models"),
++    TieredSkill(name="Tableau", tier="Nice-to-have", reasoning="Visualisation"),
++]
++
++def test_analyse_gaps_identifies_missing():
++    gaps, score = analyse_gaps(USER_SKILLS, TIERED_SKILLS)
++    gap_names = [g.skill for g in gaps]
++    assert "Machine Learning" in gap_names
++    assert "Python" not in gap_names
++    assert "SQL" not in gap_names
++
++def test_coverage_score_format():
++    _, score = analyse_gaps(USER_SKILLS, TIERED_SKILLS)
++    assert "/" in score.essential
++    assert "/" in score.important
++    assert "/" in score.nice_to_have
++
++MOCK_STEPS_JSON = json.dumps({
++    "next_steps": [
++        "Complete a Machine Learning course on Coursera",
++        "Build a personal project applying ML to a real dataset",
++    ]
++})
++
++def make_mock_completion(content: str):
++    mock = MagicMock()
++    mock.choices[0].message.content = content
++    return mock
++
++def test_generate_next_steps_returns_list():
++    gaps = [GapItem(skill="Machine Learning", tier="Important", action="")]
++    with patch("services.next_steps.openai_client.chat.completions.create",
++               return_value=make_mock_completion(MOCK_STEPS_JSON)):
++        with patch("services.next_steps.log_interaction"):
++            result = generate_next_steps("Data Analyst", gaps, "test-session")
++    assert isinstance(result, list)
++    assert len(result) == 2
+diff --git a/backend/tests/test_skill_extractor.py b/backend/tests/test_skill_extractor.py
+new file mode 100644
+index 0000000..d9671fb
+--- /dev/null
++++ b/backend/tests/test_skill_extractor.py
+@@ -0,0 +1,35 @@
++import json
++import pytest
++from unittest.mock import MagicMock, patch
++from services.skill_extractor import extract_skills
++from models.schemas import ExtractedSkill
++
++MOCK_RESPONSE_JSON = json.dumps({
++    "skills": [
++        {"name": "Python", "evidence": "Built ETL pipelines in Python", "confidence": "High"},
++        {"name": "SQL", "evidence": "Queried PostgreSQL databases daily", "confidence": "High"},
++        {"name": "Tableau", "evidence": "Created dashboards in Tableau", "confidence": "Medium"},
++    ]
++})
++
++def make_mock_completion(content: str):
++    mock = MagicMock()
++    mock.choices[0].message.content = content
++    return mock
++
++def test_extract_skills_returns_list():
++    with patch("services.skill_extractor.openai_client.chat.completions.create",
++               return_value=make_mock_completion(MOCK_RESPONSE_JSON)):
++        with patch("services.skill_extractor.log_interaction"):
++            result = extract_skills("dummy resume text", "test-session")
++    assert isinstance(result, list)
++    assert len(result) == 3
++
++def test_extract_skills_fields():
++    with patch("services.skill_extractor.openai_client.chat.completions.create",
++               return_value=make_mock_completion(MOCK_RESPONSE_JSON)):
++        with patch("services.skill_extractor.log_interaction"):
++            result = extract_skills("dummy resume text", "test-session")
++    assert result[0].name == "Python"
++    assert result[0].confidence == "High"
++    assert "ETL" in result[0].evidence
+diff --git a/backend/tests/test_skill_ranker.py b/backend/tests/test_skill_ranker.py
+new file mode 100644
+index 0000000..7dba5de
+--- /dev/null
++++ b/backend/tests/test_skill_ranker.py
+@@ -0,0 +1,35 @@
++import json
++import pytest
++from unittest.mock import MagicMock, patch
++from services.skill_ranker import rank_skills
++
++MOCK_RESPONSE_JSON = json.dumps({
++    "tiered_skills": [
++        {"name": "Python", "tier": "Essential", "reasoning": "Core language for data work"},
++        {"name": "SQL", "tier": "Essential", "reasoning": "Required for data querying"},
++        {"name": "Tableau", "tier": "Nice-to-have", "reasoning": "Useful but not required"},
++    ]
++})
++
++def make_mock_completion(content: str):
++    mock = MagicMock()
++    mock.choices[0].message.content = content
++    return mock
++
++def test_rank_skills_returns_tiered_list():
++    with patch("services.skill_ranker.openai_client.chat.completions.create",
++               return_value=make_mock_completion(MOCK_RESPONSE_JSON)):
++        with patch("services.skill_ranker.log_interaction"):
++            result = rank_skills("Data Analyst", ["Python", "SQL", "Tableau"], "test-session")
++    assert len(result) == 3
++    tiers = {s.tier for s in result}
++    assert tiers <= {"Essential", "Important", "Nice-to-have"}
++
++def test_rank_skills_fields():
++    with patch("services.skill_ranker.openai_client.chat.completions.create",
++               return_value=make_mock_completion(MOCK_RESPONSE_JSON)):
++        with patch("services.skill_ranker.log_interaction"):
++            result = rank_skills("Data Analyst", ["Python", "SQL", "Tableau"], "test-session")
++    assert result[0].name == "Python"
++    assert result[0].tier == "Essential"
++    assert result[0].reasoning != ""

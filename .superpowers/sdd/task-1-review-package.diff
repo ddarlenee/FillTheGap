@@ -1,0 +1,134 @@
+diff --git a/backend/.env.example b/backend/.env.example
+new file mode 100644
+index 0000000..17c027c
+--- /dev/null
++++ b/backend/.env.example
+@@ -0,0 +1,3 @@
++OPENAI_API_KEY=sk-...
++SKILLSFUTURE_DATA_DIR=data/skillsfuture
++LOG_DIR=logs
+diff --git a/backend/.gitignore b/backend/.gitignore
+new file mode 100644
+index 0000000..49bc9b0
+--- /dev/null
++++ b/backend/.gitignore
+@@ -0,0 +1,10 @@
++*.env
++sessions/*
++!sessions/.gitkeep
++logs/*
++!logs/.gitkeep
++__pycache__/
++.pytest_cache/
++*.pyc
++.venv/
++venv/
+diff --git a/backend/config.py b/backend/config.py
+new file mode 100644
+index 0000000..9bf8e21
+--- /dev/null
++++ b/backend/config.py
+@@ -0,0 +1,11 @@
++from pydantic_settings import BaseSettings
++
++class Settings(BaseSettings):
++    openai_api_key: str
++    skillsfuture_data_dir: str = "data/skillsfuture"
++    log_dir: str = "logs"
++
++    class Config:
++        env_file = ".env"
++
++settings = Settings()
+diff --git a/backend/data/__init__.py b/backend/data/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/backend/data/skillsfuture/.gitkeep b/backend/data/skillsfuture/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/backend/data/skillsfuture/README.txt b/backend/data/skillsfuture/README.txt
+new file mode 100644
+index 0000000..96ae51e
+--- /dev/null
++++ b/backend/data/skillsfuture/README.txt
+@@ -0,0 +1 @@
++Place SkillsFuture .xlsx files here
+\ No newline at end of file
+diff --git a/backend/logs/.gitkeep b/backend/logs/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/backend/main.py b/backend/main.py
+new file mode 100644
+index 0000000..72c225d
+--- /dev/null
++++ b/backend/main.py
+@@ -0,0 +1,20 @@
++from contextlib import asynccontextmanager
++from fastapi import FastAPI
++from fastapi.middleware.cors import CORSMiddleware
++
++@asynccontextmanager
++async def lifespan(app: FastAPI):
++    yield  # startup/shutdown hooks added in Task 9
++
++app = FastAPI(title="Skills Analyser", lifespan=lifespan)
++
++app.add_middleware(
++    CORSMiddleware,
++    allow_origins=["http://localhost:5173"],
++    allow_methods=["*"],
++    allow_headers=["*"],
++)
++
++@app.get("/api/health")
++def health():
++    return {"status": "ok"}
+diff --git a/backend/models/__init__.py b/backend/models/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/backend/requirements.txt b/backend/requirements.txt
+new file mode 100644
+index 0000000..e6796ea
+--- /dev/null
++++ b/backend/requirements.txt
+@@ -0,0 +1,13 @@
++fastapi==0.111.0
++uvicorn[standard]==0.30.0
++python-multipart==0.0.9
++PyMuPDF==1.24.5
++openai==1.35.0
++pandas==2.2.2
++openpyxl==3.1.5
++python-dotenv==1.0.1
++pydantic==2.7.4
++pydantic-settings==2.3.4
++pytest==8.2.2
++pytest-asyncio==0.23.7
++httpx==0.27.0
+diff --git a/backend/routers/__init__.py b/backend/routers/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/backend/services/__init__.py b/backend/services/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/backend/sessions/.gitkeep b/backend/sessions/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/backend/tests/__init__.py b/backend/tests/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/backend/tests/test_endpoints.py b/backend/tests/test_endpoints.py
+new file mode 100644
+index 0000000..b76bbe1
+--- /dev/null
++++ b/backend/tests/test_endpoints.py
+@@ -0,0 +1,9 @@
++from fastapi.testclient import TestClient
++from main import app
++
++client = TestClient(app)
++
++def test_health():
++    response = client.get("/api/health")
++    assert response.status_code == 200
++    assert response.json() == {"status": "ok"}
