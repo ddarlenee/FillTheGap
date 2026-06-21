@@ -69,6 +69,19 @@ class SkillsFutureLoader:
     def _load_file(self, path: Path):
         try:
             xl = pd.ExcelFile(path)
+            # SkillsFuture Skills Framework dataset — primary sheet
+            if "Job Role_TCS_CCS" in xl.sheet_names:
+                df = pd.read_excel(path, sheet_name="Job Role_TCS_CCS")
+                if "Job Role" in df.columns and "TSC_CCS Title" in df.columns:
+                    for _, row in df.iterrows():
+                        role = str(row["Job Role"]).strip()
+                        skill = str(row["TSC_CCS Title"]).strip()
+                        if role and skill and role != "nan" and skill != "nan":
+                            self._role_index.setdefault(role, [])
+                            if skill not in self._role_index[role]:
+                                self._role_index[role].append(skill)
+                    return
+            # Generic fallback for other Excel formats
             for sheet_name in xl.sheet_names:
                 df = pd.read_excel(path, sheet_name=sheet_name, header=None)
                 self._extract_pairs(df.fillna("").astype(str))
@@ -77,16 +90,22 @@ class SkillsFutureLoader:
 
     def _extract_pairs(self, df: pd.DataFrame):
         role_keywords = {"job role", "role title", "occupation", "job title"}
+        skill_keywords = {"tsc_ccs title", "skill title", "skill name", "competency"}
         for col_idx in range(len(df.columns)):
             header = df.iloc[0, col_idx].lower()
             if any(kw in header for kw in role_keywords):
+                # Prefer a column explicitly named as a skill title over col+1
                 skill_col = col_idx + 1
+                for c in range(len(df.columns)):
+                    if any(kw in df.iloc[0, c].lower() for kw in skill_keywords):
+                        skill_col = c
+                        break
                 if skill_col >= len(df.columns):
                     continue
                 for _, row in df.iloc[1:].iterrows():
                     role = row.iloc[col_idx].strip()
                     skill = row.iloc[skill_col].strip()
-                    if role and skill:
+                    if role and skill and role != "nan" and skill != "nan":
                         self._role_index.setdefault(role, [])
                         if skill not in self._role_index[role]:
                             self._role_index[role].append(skill)
