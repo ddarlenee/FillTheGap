@@ -75,7 +75,11 @@ def analyse(request: AnalyseRequest, authorization: str = Header(...)):
         ]
         tiered_skills = rank_skills(primary_role, skills_with_proficiency, email)
 
-        gaps, coverage, matches_map = analyse_gaps(user_skills, tiered_skills, email)
+        # Use strict matching when skills come from career progression (not a fresh resume).
+        # Semantic matching is too lenient for named skills — it would credit "Data Analysis"
+        # toward "Machine Learning", giving instant 100% on the next career stage.
+        strict_mode = request.user_skill_names is not None
+        gaps, coverage, matches_map = analyse_gaps(user_skills, tiered_skills, email, strict=strict_mode)
 
         tiered_skills = [
             ts.model_copy(update={"matched_by": matches_map.get(ts.name, [])})

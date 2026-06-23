@@ -35,11 +35,40 @@ export default function CareerProgressionPage() {
     if (startingRole) return
     setStartingRole(role)
     try {
-      const result = await postAnalyse({
-        user_skill_names: analysisResult!.user_skills.map((s) => s.name),
-        target_role: role,
-      })
-      setAnalysisResult(result)
+      // Find the career rung so we know which skills are confirmed gaps
+      const rung =
+        progressResult?.immediate_next.role === role
+          ? progressResult.immediate_next
+          : progressResult?.full_ladder.find((r) => r.role === role)
+
+      // skill_delta = skills the career analysis says the user still lacks for this role.
+      // Excluding them from user_skill_names guarantees meaningful gap coverage
+      // (prevents instant 100% when skill sets heavily overlap between adjacent roles).
+      const deltaSet = new Set((rung?.skill_delta ?? []).map((s) => s.toLowerCase()))
+
+      const skillsToPass = analysisResult!.user_skills
+        .map((s) => s.name)
+        .filter((name) => !deltaSet.has(name.toLowerCase()))
+
+      // Preserve whatever evidence is available (real resume quotes or prior synthetic text)
+      // so TieredSkillList can show the blockquote on the next stage's gap dashboard.
+      const evidenceCache = new Map(
+        analysisResult!.user_skills.map((s) => [s.name.toLowerCase(), s.evidence])
+      )
+
+      const result = await postAnalyse({ user_skill_names: skillsToPass, target_role: role })
+
+      // Merge evidence back into the new result — the backend creates generic evidence
+      // for skill-name inputs, so we restore whatever the user actually had.
+      const merged = {
+        ...result,
+        user_skills: result.user_skills.map((s) => ({
+          ...s,
+          evidence: evidenceCache.get(s.name.toLowerCase()) ?? s.evidence,
+        })),
+      }
+
+      setAnalysisResult(merged)
       resetProgress()
       navigate('/gap-dashboard', { state: { from: 'career' } })
     } catch {

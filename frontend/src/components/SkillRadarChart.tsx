@@ -71,21 +71,30 @@ export default function SkillRadarChart({ roleSkills }: Props) {
     <div className="bg-white border rounded-xl p-6 mb-6">
       <h2 className="font-semibold text-gray-700 mb-5">Competency Chart</h2>
       <ResponsiveContainer width="100%" height={320}>
-        <RadarChart data={data} outerRadius={100}>
+        <RadarChart data={data} outerRadius={85} margin={{ top: 28, right: 72, bottom: 28, left: 72 }}>
           <PolarGrid />
           <PolarAngleAxis
             dataKey="tier"
-            tick={({ x, y, payload }: any) => {
+            tick={({ x, y, payload, cx, cy }: any) => {
+              // Push label outward from the chart centre so it clears the polygon
+              const dx = x - cx
+              const dy = y - cy
+              const dist = Math.sqrt(dx * dx + dy * dy) || 1
+              const pad = 18
+              const lx = x + (dx / dist) * pad
+              const ly = y + (dy / dist) * pad
+              const anchor = Math.abs(dx) < 8 ? 'middle' : dx > 0 ? 'start' : 'end'
+
               const d = data.find((item) => item.tier === payload.value)
               const colour = TIER_COLOUR[payload.value] ?? '#6b7280'
               return (
                 <g>
-                  <text x={x} y={y - 7} textAnchor="middle" dominantBaseline="central"
+                  <text x={lx} y={ly - 8} textAnchor={anchor} dominantBaseline="central"
                     fontSize={13} fontWeight={700} fill={colour}>
                     {payload.value}
                   </text>
                   {d && (
-                    <text x={x} y={y + 10} textAnchor="middle" dominantBaseline="central"
+                    <text x={lx} y={ly + 9} textAnchor={anchor} dominantBaseline="central"
                       fontSize={11} fontWeight={500} fill={colour} opacity={0.75}>
                       {d.realPct}%
                     </text>

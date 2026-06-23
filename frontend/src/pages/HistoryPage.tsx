@@ -308,7 +308,17 @@ function HistoryCard({ entry: propEntry, onUpdate, onAdvance }: CardProps) {
           <p className="text-green-800 font-semibold text-base">You're role-ready for {entry.role}!</p>
           <p className="text-green-700 text-sm">You've closed all essential and important skill gaps. Ready to aim higher?</p>
           <button
-            onClick={() => onAdvance(entry.role, entry.user_skills ?? [])}
+            onClick={() => {
+              // Exclude skills acquired by ticking off next steps — those are still being
+              // learned and should appear as gaps in the next-stage analysis.
+              const stepSkills = new Set(
+                normalizeSteps(entry.next_steps)
+                  .filter((s) => s.completed && s.skill)
+                  .map((s) => s.skill)
+              )
+              const baseSkills = (entry.user_skills ?? []).filter((s) => !stepSkills.has(s))
+              onAdvance(entry.role, baseSkills)
+            }}
             className="mt-1 inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
           >
             What's next? See your career path

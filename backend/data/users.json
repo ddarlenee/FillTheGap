@@ -790,6 +790,149 @@
           "Data Mining and Modelling",
           "Data Storytelling and Visualisation"
         ]
+      },
+      {
+        "id": "147e8c7c-737a-44af-a5aa-9c3094b362d0",
+        "timestamp": "2026-06-23T18:59:01.176949+00:00",
+        "role": "Data Science Manager",
+        "coverage": {
+          "essential": "2/2",
+          "important": "3/3",
+          "nice_to_have": "5/5"
+        },
+        "gaps": [],
+        "next_steps": [],
+        "user_skills": [
+          "Python",
+          "SQL",
+          "Web Development",
+          "JavaScript",
+          "HTML",
+          "CSS",
+          "SQLite",
+          "MongoDB",
+          "AWS",
+          "Microsoft Excel",
+          "Leadership",
+          "AI Integration",
+          "Cybersecurity",
+          "Data Analytics",
+          "Cloud Infrastructure",
+          "Teaching",
+          "UX Optimization",
+          "Full-Stack Development",
+          "Resource Discovery Implementation",
+          "Python Workshop Facilitation",
+          "Community Outreach",
+          "Project Management",
+          "Data Mining and Modelling",
+          "Data Storytelling and Visualisation"
+        ]
+      },
+      {
+        "id": "752acbb8-2833-4139-82c5-8f4f7d945972",
+        "timestamp": "2026-06-23T19:07:42.714054+00:00",
+        "role": "Senior Data Analyst",
+        "coverage": {
+          "essential": "3/3",
+          "important": "3/3",
+          "nice_to_have": "4/4"
+        },
+        "gaps": [],
+        "next_steps": [],
+        "user_skills": [
+          "Python",
+          "SQL",
+          "Web Development",
+          "JavaScript",
+          "HTML",
+          "CSS",
+          "SQLite",
+          "MongoDB",
+          "AWS",
+          "Microsoft Excel",
+          "Leadership",
+          "AI Integration",
+          "Cybersecurity",
+          "Data Analytics",
+          "Cloud Infrastructure",
+          "Teaching",
+          "UX Optimization",
+          "Full-Stack Development",
+          "Resource Discovery Implementation",
+          "Python Workshop Facilitation",
+          "Community Outreach"
+        ]
+      },
+      {
+        "id": "82094ec0-6a08-498d-b628-8925d1adeddf",
+        "timestamp": "2026-06-23T19:08:38.488781+00:00",
+        "role": "Lead Data Scientist",
+        "coverage": {
+          "essential": "2/2",
+          "important": "4/4",
+          "nice_to_have": "4/4"
+        },
+        "gaps": [],
+        "next_steps": [],
+        "user_skills": [
+          "Python",
+          "SQL",
+          "Web Development",
+          "JavaScript",
+          "HTML",
+          "CSS",
+          "SQLite",
+          "MongoDB",
+          "AWS",
+          "Microsoft Excel",
+          "Leadership",
+          "AI Integration",
+          "Cybersecurity",
+          "Data Analytics",
+          "Cloud Infrastructure",
+          "Teaching",
+          "UX Optimization",
+          "Full-Stack Development",
+          "Resource Discovery Implementation",
+          "Python Workshop Facilitation",
+          "Community Outreach"
+        ]
+      },
+      {
+        "id": "839e1589-96fc-47fc-bb6b-5f2b99cd36aa",
+        "timestamp": "2026-06-23T19:16:06.209516+00:00",
+        "role": "Principal Data Scientist",
+        "coverage": {
+          "essential": "2/2",
+          "important": "3/3",
+          "nice_to_have": "5/5"
+        },
+        "gaps": [],
+        "next_steps": [],
+        "user_skills": [
+          "Python",
+          "SQL",
+          "Web Development",
+          "JavaScript",
+          "HTML",
+          "CSS",
+          "SQLite",
+          "MongoDB",
+          "AWS",
+          "Microsoft Excel",
+          "Leadership",
+          "AI Integration",
+          "Cybersecurity",
+          "Data Analytics",
+          "Cloud Infrastructure",
+          "Teaching",
+          "UX Optimization",
+          "Full-Stack Development",
+          "Resource Discovery Implementation",
+          "Python Workshop Facilitation",
+          "Community Outreach"
+        ]
       }
     ]
   }

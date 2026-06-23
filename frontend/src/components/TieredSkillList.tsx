@@ -19,8 +19,14 @@ interface Props {
 function MatchedSkillRow({ skill, evidenceMap }: { skill: TieredSkill; evidenceMap: Map<string, string> }) {
   const [open, setOpen] = useState(false)
   const quotes = skill.matched_by
-    .map((name) => ({ name, evidence: evidenceMap.get(name) }))
+    .map((name) => ({ name, evidence: evidenceMap.get(name.toLowerCase()) }))
     .filter((e) => e.evidence)
+
+  // Only show "via X" when X differs from the skill name — identical names are redundant
+  const nonSelfMatches = skill.matched_by.filter(
+    (m) => m.toLowerCase() !== skill.name.toLowerCase()
+  )
+  const showVia = nonSelfMatches.length > 0
 
   return (
     <div
@@ -31,12 +37,14 @@ function MatchedSkillRow({ skill, evidenceMap }: { skill: TieredSkill; evidenceM
         <span>{skill.name}</span>
         <span className="text-blue-500 font-bold shrink-0">✓</span>
       </div>
-      <div className="text-xs mt-0.5 text-blue-600 opacity-80">
-        via {skill.matched_by.join(', ')}
-        {quotes.length > 0 && (
-          <span className="ml-1 text-blue-400">{open ? '▲' : '▼'}</span>
-        )}
-      </div>
+      {(showVia || quotes.length > 0) && (
+        <div className="text-xs mt-0.5 text-blue-600 opacity-80">
+          {showVia && `via ${nonSelfMatches.join(', ')}`}
+          {quotes.length > 0 && (
+            <span className={`${showVia ? 'ml-1' : ''} text-blue-400`}>{open ? '▲' : '▼'}</span>
+          )}
+        </div>
+      )}
       {open && quotes.map(({ name, evidence }) => (
         <blockquote key={name} className="mt-2 border-l-2 border-blue-300 pl-2 text-xs text-blue-700 italic opacity-90">
           "{evidence}"
@@ -47,7 +55,8 @@ function MatchedSkillRow({ skill, evidenceMap }: { skill: TieredSkill; evidenceM
 }
 
 export default function TieredSkillList({ skills, userSkills = [] }: Props) {
-  const evidenceMap = new Map(userSkills.map((s) => [s.name, s.evidence]))
+  // Case-insensitive map so LLM-normalised names in matched_by always resolve
+  const evidenceMap = new Map(userSkills.map((s) => [s.name.toLowerCase(), s.evidence]))
 
   return (
     <div className="space-y-4">
