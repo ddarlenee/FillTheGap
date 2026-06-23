@@ -222,4 +222,4 @@ When a user advances to the next career stage via the ladder, the analysis **doe
 
 ---
 
-## Built for PyCon APAC 2026
+## Built for PyConSG 2026 Hackathon
