@@ -3,13 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useSessionStore } from '../store/useSessionStore'
 import { postProgress } from '../api/progress'
-import { postAnalyse } from '../api/analyse'
+import { saveCareerStage } from '../api/auth'
 import CareerLadder from '../components/CareerLadder'
 
 export default function CareerProgressionPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { analysisResult, progressResult, setProgressResult, setAnalysisResult, resetProgress } = useSessionStore()
+  const { analysisResult, progressResult, setProgressResult, resetProgress } = useSessionStore()
   const [startingRole, setStartingRole] = useState<string | null>(null)
 
   const mutation = useMutation({
@@ -34,43 +34,21 @@ export default function CareerProgressionPage() {
   async function handleStartNow(role: string) {
     if (startingRole) return
     setStartingRole(role)
+
+    const rung =
+      progressResult?.immediate_next.role === role
+        ? progressResult.immediate_next
+        : progressResult?.full_ladder.find((r) => r.role === role)
+
+    if (!rung) { setStartingRole(null); return }
+
     try {
-      // Find the career rung so we know which skills are confirmed gaps
-      const rung =
-        progressResult?.immediate_next.role === role
-          ? progressResult.immediate_next
-          : progressResult?.full_ladder.find((r) => r.role === role)
-
-      // skill_delta = skills the career analysis says the user still lacks for this role.
-      // Excluding them from user_skill_names guarantees meaningful gap coverage
-      // (prevents instant 100% when skill sets heavily overlap between adjacent roles).
-      const deltaSet = new Set((rung?.skill_delta ?? []).map((s) => s.toLowerCase()))
-
-      const skillsToPass = analysisResult!.user_skills
-        .map((s) => s.name)
-        .filter((name) => !deltaSet.has(name.toLowerCase()))
-
-      // Preserve whatever evidence is available (real resume quotes or prior synthetic text)
-      // so TieredSkillList can show the blockquote on the next stage's gap dashboard.
-      const evidenceCache = new Map(
-        analysisResult!.user_skills.map((s) => [s.name.toLowerCase(), s.evidence])
-      )
-
-      const result = await postAnalyse({ user_skill_names: skillsToPass, target_role: role })
-
-      // Merge evidence back into the new result — the backend creates generic evidence
-      // for skill-name inputs, so we restore whatever the user actually had.
-      const merged = {
-        ...result,
-        user_skills: result.user_skills.map((s) => ({
-          ...s,
-          evidence: evidenceCache.get(s.name.toLowerCase()) ?? s.evidence,
-        })),
-      }
-
-      setAnalysisResult(merged)
+      // Persist the career stage directly from ladder data — no LLM gap analysis needed.
+      // transferability_score becomes the fixed readiness base; skill_delta becomes the
+      // required gaps; career next_steps become the history checklist.
+      await saveCareerStage(rung, analysisResult!.user_skills.map((s) => s.name))
       resetProgress()
-      navigate('/gap-dashboard', { state: { from: 'career' } })
+      navigate('/history')
     } catch {
       setStartingRole(null)
     }

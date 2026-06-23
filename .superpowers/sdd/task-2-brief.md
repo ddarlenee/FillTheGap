@@ -1,239 +1,173 @@
-# Task 2: SkillsFuture Data Loader + Pydantic Schemas
+### Task 2: Backend LLM — update prompt and parsing
 
-## Context
+**Files:**
+- Modify: `backend/services/career_ladder.py`
+- Modify: `backend/tests/test_career_ladder.py`
 
-This is the Skills Analyser hackathon app. Task 1 created the FastAPI scaffold under `backend/`. This task adds the data layer (SkillsFuture in-memory loader) and all Pydantic schemas.
+**Interfaces:**
+- Consumes: `CareerNextStep` from `backend/models/schemas.py` (Task 1)
+- Produces: `CareerRung.next_steps` populated from LLM JSON for the first rung; empty list for subsequent rungs
 
-## Files to create
+- [ ] **Step 1: Update the import in `career_ladder.py`**
 
-- `backend/data/skillsfuture_loader.py` — in-memory loader with demo data fallback
-- `backend/models/schemas.py` — all Pydantic request/response models
-- `backend/tests/test_skillsfuture_loader.py` — 4 tests (follow TDD)
-
-## skillsfuture_loader.py
-
-The SkillsFuture Skills Frameworks data comes as Excel files (.xlsx) placed in `backend/data/skillsfuture/`. At startup the loader reads all Excel files into an in-memory dict `{role_name: [skill_names]}`. If no Excel files are found, it falls back to hardcoded demo data so the app works without downloaded data.
+In `backend/services/career_ladder.py`, change line 4:
 
 ```python
-import pandas as pd
-from pathlib import Path
-import logging
-from config import settings
+from models.schemas import ProgressRequest, ProgressResponse, CareerRung, Milestone
+```
 
-logger = logging.getLogger(__name__)
+to:
 
-DEMO_DATA: dict[str, list[str]] = {
-    "Data Analyst": [
-        "Data Visualisation", "SQL", "Python", "Statistical Analysis",
-        "Business Intelligence Tools", "Data Storytelling", "Excel",
-        "Communication", "Problem Solving", "Data Governance",
-    ],
-    "Senior Data Analyst": [
-        "Data Visualisation", "SQL", "Python", "Statistical Analysis",
-        "Machine Learning Fundamentals", "Data Strategy", "Stakeholder Management",
-        "Team Leadership", "Data Governance", "Communication",
-    ],
-    "Data Engineer": [
-        "Python", "SQL", "ETL Pipeline Design", "Apache Spark", "Cloud Platforms",
-        "Data Modelling", "Database Administration", "Data Quality Management",
-        "DevOps Fundamentals", "Communication",
-    ],
-    "Software Engineer": [
-        "Python", "Software Architecture", "Version Control (Git)",
-        "Testing and Quality Assurance", "API Design", "Cloud Deployment",
-        "Agile Methodologies", "Communication", "Problem Solving",
-    ],
-    "Product Manager": [
-        "Product Strategy", "User Research", "Data Analysis", "Agile Methodologies",
-        "Stakeholder Management", "Communication", "Roadmap Planning",
-        "Market Analysis", "Problem Solving", "Business Acumen",
-    ],
-    "UX Designer": [
-        "User Research", "Wireframing", "Prototyping", "Usability Testing",
-        "Information Architecture", "Visual Design", "Communication",
-        "Problem Solving", "Figma", "Accessibility Design",
-    ],
-    "Machine Learning Engineer": [
-        "Python", "Machine Learning", "Deep Learning", "MLOps", "Cloud Platforms",
-        "Feature Engineering", "Model Evaluation", "SQL", "Statistics",
-        "Communication",
-    ],
+```python
+from models.schemas import ProgressRequest, ProgressResponse, CareerRung, CareerNextStep, Milestone
+```
+
+- [ ] **Step 2: Replace `SYSTEM_PROMPT` in `career_ladder.py`**
+
+Replace the entire `SYSTEM_PROMPT` string (lines 10–29) with:
+
+```python
+SYSTEM_PROMPT = """You are a career progression specialist with deep knowledge of Singapore's job market and SkillsFuture frameworks.
+Given a current role and the user's skills, infer a realistic vertical career progression ladder (2–4 future roles above the current one).
+
+For each future role provide:
+- role: exact role title
+- transferability_score: 0–100 (how much of user's current skills transfer)
+- skill_delta: list of new skills needed that the user doesn't currently have
+- why_good_fit: one sentence explaining transferability from user's background
+- milestones: 2–4 concrete, specific steps to reach THIS role from the previous rung (empty list for distant future roles)
+- next_steps: for the FIRST (closest) rung ONLY, provide 1–2 actionable learning steps per skill_delta item. Each step must reference a specific platform, course, project, or tool. Leave next_steps as [] for all other rungs.
+
+Each next_step object:
+- skill: the skill_delta item this step addresses (must match the skill_delta entry exactly)
+- action: one sentence describing the specific learning action (e.g. "Complete the MLOps Fundamentals course on Coursera")
+- summary: a version of action in 8 words or fewer (e.g. "MLOps Fundamentals — Coursera")
+
+Also identify the long_term_destination: the most senior role this path leads toward.
+
+Return ONLY valid JSON:
+{
+  "long_term_destination": "...",
+  "ladder": [
+    {
+      "role": "...",
+      "transferability_score": 0,
+      "skill_delta": ["Skill A", "Skill B"],
+      "why_good_fit": "...",
+      "milestones": [{"description": "...", "skill_focus": "..."}],
+      "next_steps": [
+        {"skill": "Skill A", "action": "Complete the Skill A Fundamentals course on Coursera", "summary": "Skill A Fundamentals — Coursera"},
+        {"skill": "Skill A", "action": "Build a project applying Skill A end-to-end", "summary": "Build Skill A project"},
+        {"skill": "Skill B", "action": "Follow the official Skill B tutorial and implement the sample project", "summary": "Skill B official tutorial"}
+      ]
+    },
+    {
+      "role": "...",
+      "transferability_score": 0,
+      "skill_delta": ["Skill C"],
+      "why_good_fit": "...",
+      "milestones": [],
+      "next_steps": []
+    }
+  ]
 }
-
-class SkillsFutureLoader:
-    def __init__(self):
-        self._role_index: dict[str, list[str]] = {}
-        self._all_roles: list[str] = []
-
-    def load(self):
-        data_dir = Path(settings.skillsfuture_data_dir)
-        if not data_dir.exists() or not list(data_dir.glob("*.xlsx")):
-            logger.warning("No SkillsFuture Excel files found — using demo data")
-            self.seed_demo_data()
-            return
-        for xlsx_file in data_dir.glob("*.xlsx"):
-            self._load_file(xlsx_file)
-        if not self._role_index:
-            logger.warning("Excel files found but no roles extracted — using demo data")
-            self.seed_demo_data()
-        self._all_roles = sorted(self._role_index.keys())
-        logger.info(f"Loaded {len(self._all_roles)} roles from SkillsFuture data")
-
-    def seed_demo_data(self):
-        self._role_index = {k: list(v) for k, v in DEMO_DATA.items()}
-        self._all_roles = sorted(self._role_index.keys())
-
-    def _load_file(self, path: Path):
-        try:
-            xl = pd.ExcelFile(path)
-            for sheet_name in xl.sheet_names:
-                df = pd.read_excel(path, sheet_name=sheet_name, header=None)
-                self._extract_pairs(df.fillna("").astype(str))
-        except Exception as e:
-            logger.error(f"Failed to load {path.name}: {e}")
-
-    def _extract_pairs(self, df: pd.DataFrame):
-        role_keywords = {"job role", "role title", "occupation", "job title"}
-        for col_idx in range(len(df.columns)):
-            header = df.iloc[0, col_idx].lower()
-            if any(kw in header for kw in role_keywords):
-                skill_col = col_idx + 1
-                if skill_col >= len(df.columns):
-                    continue
-                for _, row in df.iloc[1:].iterrows():
-                    role = row.iloc[col_idx].strip()
-                    skill = row.iloc[skill_col].strip()
-                    if role and skill:
-                        self._role_index.setdefault(role, [])
-                        if skill not in self._role_index[role]:
-                            self._role_index[role].append(skill)
-                break
-
-    def get_roles(self, query: str = "") -> list[str]:
-        if not query:
-            return self._all_roles
-        q = query.lower()
-        return [r for r in self._all_roles if q in r.lower()]
-
-    def get_skills_for_role(self, role: str) -> list[str]:
-        return self._role_index.get(role, [])
-
-skillsfuture = SkillsFutureLoader()
+Order ladder from closest to most distant future role."""
 ```
 
-## schemas.py
+- [ ] **Step 3: Update the parsing loop in `build_career_ladder`**
+
+In `backend/services/career_ladder.py`, replace the `ladder = [...]` list comprehension (lines 54–63) with:
 
 ```python
-from pydantic import BaseModel
-from typing import Optional
-
-class UploadResponse(BaseModel):
-    session_id: str
-    resume_text: str
-
-class ExtractedSkill(BaseModel):
-    name: str
-    evidence: str
-    confidence: str  # "High" | "Medium" | "Low"
-
-class TieredSkill(BaseModel):
-    name: str
-    tier: str  # "Essential" | "Important" | "Nice-to-have"
-    reasoning: str
-
-class GapItem(BaseModel):
-    skill: str
-    tier: str
-    action: str
-
-class CoverageScore(BaseModel):
-    essential: str    # e.g. "7/12"
-    important: str
-    nice_to_have: str
-
-class AnalyseRequest(BaseModel):
-    session_id: str
-    resume_text: str
-    target_role: Optional[str] = None  # None triggers auto-fit mode
-
-class AnalyseResponse(BaseModel):
-    session_id: str
-    target_roles: list[str]
-    user_skills: list[ExtractedSkill]
-    tiered_role_skills: list[TieredSkill]
-    coverage_score: CoverageScore
-    gaps: list[GapItem]
-    next_steps: list[str]
-
-class RoleSearchResponse(BaseModel):
-    roles: list[str]
-
-class Milestone(BaseModel):
-    description: str
-    skill_focus: str
-
-class CareerRung(BaseModel):
-    role: str
-    transferability_score: int  # 0–100
-    skill_delta: list[str]
-    why_good_fit: str
-    milestones: list[Milestone]
-
-class ProgressRequest(BaseModel):
-    current_role: str
-    user_skill_names: list[str]
-
-class ProgressResponse(BaseModel):
-    current_role: str
-    immediate_next: CareerRung
-    full_ladder: list[CareerRung]
-    long_term_destination: str
+ladder = [
+    CareerRung(
+        role=r["role"],
+        transferability_score=r["transferability_score"],
+        skill_delta=r["skill_delta"],
+        why_good_fit=r["why_good_fit"],
+        milestones=[Milestone(**m) for m in r.get("milestones", [])],
+        next_steps=[CareerNextStep(**s) for s in r.get("next_steps", [])],
+    )
+    for r in data["ladder"]
+]
 ```
 
-## Tests (backend/tests/test_skillsfuture_loader.py)
+- [ ] **Step 4: Update `MOCK_LADDER_JSON` in the test file**
 
-Follow TDD: write all 4 tests first, run to see them fail (ImportError), then implement, run again to see 4 PASS.
+In `backend/tests/test_career_ladder.py`, replace `MOCK_LADDER_JSON` (lines 7–28) with:
 
 ```python
-import pytest
-from data.skillsfuture_loader import SkillsFutureLoader
-
-def test_demo_data_loads():
-    loader = SkillsFutureLoader()
-    loader.seed_demo_data()
-    roles = loader.get_roles()
-    assert len(roles) > 0
-
-def test_get_roles_filter():
-    loader = SkillsFutureLoader()
-    loader.seed_demo_data()
-    results = loader.get_roles("data")
-    assert all("data" in r.lower() for r in results)
-
-def test_get_skills_for_role():
-    loader = SkillsFutureLoader()
-    loader.seed_demo_data()
-    roles = loader.get_roles()
-    skills = loader.get_skills_for_role(roles[0])
-    assert isinstance(skills, list)
-    assert len(skills) > 0
-
-def test_unknown_role_returns_empty():
-    loader = SkillsFutureLoader()
-    loader.seed_demo_data()
-    assert loader.get_skills_for_role("Nonexistent Role XYZ") == []
+MOCK_LADDER_JSON = json.dumps({
+    "long_term_destination": "Principal Data Scientist",
+    "ladder": [
+        {
+            "role": "Senior Data Analyst",
+            "transferability_score": 72,
+            "skill_delta": ["Machine Learning", "Stakeholder Management"],
+            "why_good_fit": "High transferability from your analytics background",
+            "milestones": [
+                {"description": "Lead one end-to-end analytics project", "skill_focus": "Leadership"},
+                {"description": "Complete Andrew Ng ML course", "skill_focus": "Machine Learning"},
+            ],
+            "next_steps": [
+                {"skill": "Machine Learning", "action": "Complete Andrew Ng's Machine Learning Specialization on Coursera", "summary": "Andrew Ng ML — Coursera"},
+                {"skill": "Machine Learning", "action": "Implement a classification model on a Kaggle dataset and publish results", "summary": "Kaggle classification project"},
+                {"skill": "Stakeholder Management", "action": "Complete the Stakeholder Management course on LinkedIn Learning", "summary": "Stakeholder Management — LinkedIn Learning"}
+            ]
+        },
+        {
+            "role": "Data Science Manager",
+            "transferability_score": 45,
+            "skill_delta": ["Team Leadership", "Budget Management"],
+            "why_good_fit": "Natural progression from senior analytics roles",
+            "milestones": [],
+            "next_steps": []
+        }
+    ]
+})
 ```
 
-## Steps
+- [ ] **Step 5: Add tests for `next_steps` parsing**
 
-1. Write the 4 tests to `backend/tests/test_skillsfuture_loader.py`
-2. Run `pytest tests/test_skillsfuture_loader.py -v` from `backend/` — expect ImportError (RED)
-3. Create `backend/data/skillsfuture_loader.py` with the code above
-4. Create `backend/models/schemas.py` with the code above
-5. Run `pytest tests/test_skillsfuture_loader.py -v` — expect 4 PASS (GREEN)
-6. Run `pytest tests/ -v` — all tests (including Task 1's health test) should pass
-7. Commit
+In `backend/tests/test_career_ladder.py`, add after the existing tests:
 
-## Working directory
+```python
+def test_build_career_ladder_next_steps_on_immediate_next():
+    req = ProgressRequest(session_id="test-session", current_role="Data Analyst", user_skill_names=["Python", "SQL"])
+    with patch("services.career_ladder.openai_client.chat.completions.create",
+               return_value=make_mock_completion(MOCK_LADDER_JSON)):
+        with patch("services.career_ladder.log_interaction"):
+            with patch("services.career_ladder.skillsfuture.get_skills_for_role", return_value=[]):
+                result = build_career_ladder(req, "test-session")
+    assert len(result.immediate_next.next_steps) == 3
+    assert result.immediate_next.next_steps[0].skill == "Machine Learning"
+    assert result.immediate_next.next_steps[0].action == "Complete Andrew Ng's Machine Learning Specialization on Coursera"
+    assert result.immediate_next.next_steps[0].summary == "Andrew Ng ML — Coursera"
 
-`C:\Users\darle\OneDrive\pycon26` — run pytest from inside `backend/`
+def test_build_career_ladder_full_ladder_next_steps_empty():
+    req = ProgressRequest(session_id="test-session", current_role="Data Analyst", user_skill_names=["Python"])
+    with patch("services.career_ladder.openai_client.chat.completions.create",
+               return_value=make_mock_completion(MOCK_LADDER_JSON)):
+        with patch("services.career_ladder.log_interaction"):
+            with patch("services.career_ladder.skillsfuture.get_skills_for_role", return_value=[]):
+                result = build_career_ladder(req, "test-session")
+    assert result.full_ladder[0].next_steps == []
+```
+
+- [ ] **Step 6: Run the full test suite**
+
+```bash
+pytest tests/test_career_ladder.py -v
+```
+
+Expected: **all tests PASS**, including the two new ones.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add backend/services/career_ladder.py backend/tests/test_career_ladder.py
+git commit -m "feat: update career ladder LLM prompt to generate per-skill next steps"
+```
+
+---
+

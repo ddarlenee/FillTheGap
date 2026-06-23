@@ -1,124 +1,95 @@
-# Task 1: Backend scaffold
+### Task 1: Backend schema — add `CareerNextStep` and update `CareerRung`
 
-## What to build
+**Files:**
+- Modify: `backend/models/schemas.py`
+- Test: `backend/tests/test_career_ladder.py`
 
-Create the FastAPI backend skeleton for the Skills Analyser app. No business logic yet — just structure, config, and a health endpoint.
+**Interfaces:**
+- Produces: `CareerNextStep` Pydantic model with fields `skill: str`, `action: str`, `summary: str = ""`
+- Produces: `CareerRung.next_steps: list[CareerNextStep] = []`
 
-## Files to create
+- [ ] **Step 1: Add `CareerNextStep` model to `schemas.py`**
 
-- `backend/main.py` — FastAPI app, CORS middleware allowing `http://localhost:5173`, health endpoint at `GET /api/health` returning `{"status": "ok"}`, and placeholder for router registration
-- `backend/config.py` — pydantic-settings `Settings` class with fields: `openai_api_key: str`, `skillsfuture_data_dir: str = "data/skillsfuture"`, `log_dir: str = "logs"`; reads from `.env` file
-- `backend/.env.example` — contains `OPENAI_API_KEY=sk-...`, `SKILLSFUTURE_DATA_DIR=data/skillsfuture`, `LOG_DIR=logs`
-- `backend/requirements.txt` — exact versions listed below
-- `backend/routers/__init__.py` — empty
-- `backend/services/__init__.py` — empty
-- `backend/models/__init__.py` — empty
-- `backend/data/__init__.py` — empty
-- `backend/tests/__init__.py` — empty
-- `backend/logs/` — directory (add a `.gitkeep`)
-- `backend/sessions/` — directory (add a `.gitkeep`)
-- `backend/data/skillsfuture/` — directory (add a `.gitkeep` and a README.txt saying "Place SkillsFuture .xlsx files here")
-- `backend/tests/test_endpoints.py` — health check test (see below)
-
-## requirements.txt (exact)
-
-```
-fastapi==0.111.0
-uvicorn[standard]==0.30.0
-python-multipart==0.0.9
-PyMuPDF==1.24.5
-openai==1.35.0
-pandas==2.2.2
-openpyxl==3.1.5
-python-dotenv==1.0.1
-pydantic==2.7.4
-pydantic-settings==2.3.4
-pytest==8.2.2
-pytest-asyncio==0.23.7
-httpx==0.27.0
-```
-
-## main.py
+Open `backend/models/schemas.py`. After the `Milestone` class (line 51), insert:
 
 ```python
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    yield  # startup/shutdown hooks added in Task 9
-
-app = FastAPI(title="Skills Analyser", lifespan=lifespan)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/api/health")
-def health():
-    return {"status": "ok"}
+class CareerNextStep(BaseModel):
+    skill: str       # matches a skill_delta entry exactly
+    action: str      # full actionable sentence, e.g. "Complete MLOps Fundamentals on Coursera"
+    summary: str = ""  # ≤8-word version, e.g. "MLOps Fundamentals — Coursera"
 ```
 
-## config.py
+- [ ] **Step 2: Add `next_steps` to `CareerRung`**
+
+In `backend/models/schemas.py`, update the `CareerRung` class to:
 
 ```python
-from pydantic_settings import BaseSettings
-
-class Settings(BaseSettings):
-    openai_api_key: str
-    skillsfuture_data_dir: str = "data/skillsfuture"
-    log_dir: str = "logs"
-
-    class Config:
-        env_file = ".env"
-
-settings = Settings()
+class CareerRung(BaseModel):
+    role: str
+    transferability_score: int  # 0–100
+    skill_delta: list[str]
+    why_good_fit: str
+    milestones: list[Milestone]
+    next_steps: list[CareerNextStep] = []
 ```
 
-## Test (backend/tests/test_endpoints.py)
+- [ ] **Step 3: Write a failing test for the new model**
 
-Follow TDD:
-1. Write the test first
-2. Run it — it should fail (ImportError or similar) before main.py exists
-3. Create main.py
-4. Run it — it should pass
+In `backend/tests/test_career_ladder.py`, add this test at the bottom of the file (before running anything):
 
 ```python
-from fastapi.testclient import TestClient
-from main import app
+def test_career_next_step_model():
+    from models.schemas import CareerNextStep
+    step = CareerNextStep(skill="MLOps", action="Complete MLOps Fundamentals on Coursera", summary="MLOps Fundamentals — Coursera")
+    assert step.skill == "MLOps"
+    assert step.action == "Complete MLOps Fundamentals on Coursera"
+    assert step.summary == "MLOps Fundamentals — Coursera"
 
-client = TestClient(app)
-
-def test_health():
-    response = client.get("/api/health")
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+def test_career_rung_next_steps_defaults_empty():
+    from models.schemas import CareerRung, Milestone
+    rung = CareerRung(
+        role="Senior Data Analyst",
+        transferability_score=72,
+        skill_delta=["MLOps"],
+        why_good_fit="Good fit",
+        milestones=[],
+    )
+    assert rung.next_steps == []
 ```
 
-## Steps
+- [ ] **Step 4: Run tests to confirm they fail**
 
-1. Create all directories and `__init__.py` / `.gitkeep` files
-2. Write `requirements.txt`
-3. Write `.env.example`
-4. Write the failing test in `backend/tests/test_endpoints.py`
-5. `cd backend && pip install -r requirements.txt` (run from backend/)
-6. Run `pytest tests/test_endpoints.py -v` — expect failure (no main.py yet)
-7. Write `config.py` and `main.py`
-8. Run `pytest tests/test_endpoints.py -v` — expect 1 PASS
-9. Commit everything under `backend/`
+From the `backend/` directory:
+```bash
+cd backend && pytest tests/test_career_ladder.py::test_career_next_step_model tests/test_career_ladder.py::test_career_rung_next_steps_defaults_empty -v
+```
 
-## Working directory
+Expected: **FAIL** — `ImportError: cannot import name 'CareerNextStep'` (because the model doesn't exist yet).
 
-`C:\Users\darle\OneDrive\pycon26`
+- [ ] **Step 5: Run tests again to confirm they pass**
 
-All backend files live under `backend/`. Run pytest from inside `backend/`.
+The models were written in Step 1–2, so they should already exist. Run:
 
-## Notes
+```bash
+pytest tests/test_career_ladder.py::test_career_next_step_model tests/test_career_ladder.py::test_career_rung_next_steps_defaults_empty -v
+```
 
-- Do NOT create a `.env` file (only `.env.example`) — the real `.env` with the API key is the user's responsibility
-- The `config.py` `Settings` class will fail to instantiate if `OPENAI_API_KEY` is not set. This is intentional — it prevents the app from silently starting without credentials. The test doesn't instantiate Settings, so it won't fail.
-- Add `*.env` and `sessions/` and `logs/` to `.gitignore`
+Expected: **PASS** for both.
+
+- [ ] **Step 6: Run full test suite to confirm no regressions**
+
+```bash
+pytest tests/test_career_ladder.py -v
+```
+
+Expected: all existing tests **PASS** (existing tests use `MOCK_LADDER_JSON` which has no `next_steps` key; the `= []` default means Pydantic will tolerate its absence).
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add backend/models/schemas.py backend/tests/test_career_ladder.py
+git commit -m "feat: add CareerNextStep model and next_steps field to CareerRung"
+```
+
+---
+

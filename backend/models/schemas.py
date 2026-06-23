@@ -36,6 +36,7 @@ class AnalyseRequest(BaseModel):
     resume_text: str = ""
     target_role: Optional[str] = None
     user_skill_names: Optional[list[str]] = None  # pre-extracted skills, bypasses resume parsing
+    force_gaps: Optional[list[str]] = None        # skills that must appear as gaps (career stage transitions)
 
 class AnalyseResponse(BaseModel):
     target_roles: list[str]

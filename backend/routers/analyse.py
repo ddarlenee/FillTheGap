@@ -81,6 +81,41 @@ def analyse(request: AnalyseRequest, authorization: str = Header(...)):
         strict_mode = request.user_skill_names is not None
         gaps, coverage, matches_map = analyse_gaps(user_skills, tiered_skills, email, strict=strict_mode)
 
+        # Force specified skills to appear as gaps regardless of LLM matching result.
+        # Used for career stage transitions: the career ladder's skill_delta identifies skills
+        # the user definitively lacks for the next role — they must tick these off in History
+        # before reaching 100% role readiness.  No instant role-ready.
+        if request.force_gaps:
+            force_set = {f.lower() for f in request.force_gaps}
+            tier_lookup = {ts.name.lower(): ts.tier for ts in tiered_skills}
+            tier_order = {"Essential": 0, "Important": 1, "Nice-to-have": 2}
+
+            for ts in tiered_skills:
+                key = ts.name.lower()
+                if key in force_set and ts.name in matches_map:
+                    # Remove from matched — this skill is a confirmed gap for this career stage
+                    del matches_map[ts.name]
+                    tier = tier_lookup.get(key, "Important")
+                    if not any(g.skill == ts.name for g in gaps):
+                        gaps.append(GapItem(skill=ts.name, tier=tier, action=""))
+
+            # Recompute coverage now that forced skills are unmatched
+            from models.schemas import CoverageScore as _CS
+            counts: dict[str, list[int]] = {
+                "Essential": [0, 0], "Important": [0, 0], "Nice-to-have": [0, 0]
+            }
+            for ts in tiered_skills:
+                t = ts.tier if ts.tier in counts else "Nice-to-have"
+                counts[t][1] += 1
+                if ts.name in matches_map:
+                    counts[t][0] += 1
+            coverage = _CS(
+                essential=f"{counts['Essential'][0]}/{counts['Essential'][1]}",
+                important=f"{counts['Important'][0]}/{counts['Important'][1]}",
+                nice_to_have=f"{counts['Nice-to-have'][0]}/{counts['Nice-to-have'][1]}",
+            )
+            gaps.sort(key=lambda g: tier_order.get(g.tier, 3))
+
         tiered_skills = [
             ts.model_copy(update={"matched_by": matches_map.get(ts.name, [])})
             for ts in tiered_skills

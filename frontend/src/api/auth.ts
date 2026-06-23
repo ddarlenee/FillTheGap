@@ -1,4 +1,5 @@
 import { apiClient } from './client'
+import type { CareerRung } from '../types'
 
 export interface AuthResponse {
   access_token: string
@@ -24,5 +25,16 @@ export async function fetchHistory(token: string) {
 
 export async function completeHistoryStep(entryId: string, stepIndex: number) {
   const res = await apiClient.post(`/api/auth/history/${entryId}/complete-step`, { step_index: stepIndex })
+  return res.data
+}
+
+export async function saveCareerStage(rung: CareerRung, userSkills: string[]) {
+  const res = await apiClient.post('/api/auth/history/career-stage', {
+    role: rung.role,
+    transferability_score: rung.transferability_score,
+    skill_delta: rung.skill_delta,
+    next_steps: rung.next_steps,
+    user_skills: userSkills,
+  })
   return res.data
 }

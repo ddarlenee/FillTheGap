@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useSessionStore } from '../store/useSessionStore'
 import { fetchHistory, completeHistoryStep } from '../api/auth'
 import type { ExtractedSkill } from '../types'
@@ -25,6 +25,7 @@ interface HistoryEntry {
   gaps: (string | GapRecord)[]
   next_steps?: (string | Partial<NextStep>)[]
   user_skills?: string[]
+  transferability_score?: number  // set for career-stage entries; used as fixed readiness base
 }
 
 function gapSkills(gaps: HistoryEntry['gaps']): string[] {
@@ -71,14 +72,22 @@ function adjustCoverage(
 }
 
 function computeReadiness(
-  cov: HistoryEntry['coverage'],
+  entry: HistoryEntry,
   steps: NextStep[],
 ): { pct: number; remaining: number } {
-  const [eHave, eTotal] = parseCoverage(cov.essential)
-  const [iHave, iTotal] = parseCoverage(cov.important)
-  const wHave = eHave * 3 + iHave * 2
-  const wTotal = eTotal * 3 + iTotal * 2
-  const coveragePct = wTotal === 0 ? 0 : Math.round((wHave / wTotal) * 100)
+  // Career-stage entries store transferability_score as a fixed base so that
+  // the readiness bar never starts at 100% regardless of LLM matching.
+  // Regular resume entries derive the base from actual skill coverage.
+  let basePct: number
+  if (entry.transferability_score !== undefined) {
+    basePct = entry.transferability_score
+  } else {
+    const [eHave, eTotal] = parseCoverage(entry.coverage.essential)
+    const [iHave, iTotal] = parseCoverage(entry.coverage.important)
+    const wHave = eHave * 3 + iHave * 2
+    const wTotal = eTotal * 3 + iTotal * 2
+    basePct = wTotal === 0 ? 0 : Math.round((wHave / wTotal) * 100)
+  }
 
   // Only required (Essential + Important) steps count toward 100%
   const required = steps.filter((s) => s.tier !== 'Nice-to-have')
@@ -87,10 +96,9 @@ function computeReadiness(
 
   let pct: number
   if (totalRequired > 0) {
-    // Start at coverage score; reach 100% when all required steps done
-    pct = Math.min(100, Math.round(coveragePct + (100 - coveragePct) * (completedRequired / totalRequired)))
+    pct = Math.min(100, Math.round(basePct + (100 - basePct) * (completedRequired / totalRequired)))
   } else {
-    pct = coveragePct
+    pct = basePct
   }
 
   const remaining = Math.max(0, totalRequired - completedRequired)
@@ -212,7 +220,7 @@ function HistoryCard({ entry: propEntry, onUpdate, onAdvance }: CardProps) {
   const [essHave, essTotal] = parseCoverage(entry.coverage.essential)
   const [impHave, impTotal] = parseCoverage(entry.coverage.important)
 
-  const { pct, remaining } = computeReadiness(entry.coverage, steps)
+  const { pct, remaining } = computeReadiness(entry, steps)
   const isReady = pct === 100
 
   async function handleToggle(globalIdx: number) {
@@ -400,17 +408,21 @@ function HistoryCard({ entry: propEntry, onUpdate, onAdvance }: CardProps) {
 
 export default function HistoryPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { token, userName, userEmail, logout, setAnalysisResult, resetProgress } = useSessionStore()
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Re-fetch on every navigation to this page (location.key changes per visit)
+  // so a newly saved career stage entry is always visible immediately.
   useEffect(() => {
     if (!token) { navigate('/auth'); return }
+    setLoading(true)
     fetchHistory(token)
       .then(setHistory)
       .catch(() => { logout(); navigate('/auth') })
       .finally(() => setLoading(false))
-  }, [])
+  }, [token, location.key])
 
   function handleEntryUpdate(updated: HistoryEntry) {
     setHistory((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))

@@ -72,6 +72,7 @@ def save_analysis(
     gaps: list,
     next_steps: list | None = None,
     user_skills: list | None = None,
+    transferability_score: int | None = None,
 ):
     users = _load_users()
     if email not in users:
@@ -101,7 +102,7 @@ def save_analysis(
         else:
             structured_steps.append({"summary": "", "text": str(s), "skill": "", "tier": "Important", "completed": False})
 
-    entry = {
+    entry: dict = {
         "id": str(uuid.uuid4()),
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "role": role,
@@ -110,6 +111,8 @@ def save_analysis(
         "next_steps": structured_steps,
         "user_skills": user_skills or [],
     }
+    if transferability_score is not None:
+        entry["transferability_score"] = transferability_score
     users[email]["history"].append(entry)
     _save_users(users)
 
