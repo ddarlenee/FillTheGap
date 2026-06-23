@@ -15,6 +15,11 @@ MOCK_LADDER_JSON = json.dumps({
             "milestones": [
                 {"description": "Lead one end-to-end analytics project", "skill_focus": "Leadership"},
                 {"description": "Complete Andrew Ng ML course", "skill_focus": "Machine Learning"},
+            ],
+            "next_steps": [
+                {"skill": "Machine Learning", "action": "Complete Andrew Ng's Machine Learning Specialization on Coursera", "summary": "Andrew Ng ML — Coursera"},
+                {"skill": "Machine Learning", "action": "Implement a classification model on a Kaggle dataset and publish results", "summary": "Kaggle classification project"},
+                {"skill": "Stakeholder Management", "action": "Complete the Stakeholder Management course on LinkedIn Learning", "summary": "Stakeholder Management — LinkedIn Learning"}
             ]
         },
         {
@@ -22,7 +27,8 @@ MOCK_LADDER_JSON = json.dumps({
             "transferability_score": 45,
             "skill_delta": ["Team Leadership", "Budget Management"],
             "why_good_fit": "Natural progression from senior analytics roles",
-            "milestones": []
+            "milestones": [],
+            "next_steps": []
         }
     ]
 })
@@ -83,3 +89,24 @@ def test_career_rung_next_steps_defaults_empty():
         milestones=[],
     )
     assert rung.next_steps == []
+
+def test_build_career_ladder_next_steps_on_immediate_next():
+    req = ProgressRequest(session_id="test-session", current_role="Data Analyst", user_skill_names=["Python", "SQL"])
+    with patch("services.career_ladder.openai_client.chat.completions.create",
+               return_value=make_mock_completion(MOCK_LADDER_JSON)):
+        with patch("services.career_ladder.log_interaction"):
+            with patch("services.career_ladder.skillsfuture.get_skills_for_role", return_value=[]):
+                result = build_career_ladder(req, "test-session")
+    assert len(result.immediate_next.next_steps) == 3
+    assert result.immediate_next.next_steps[0].skill == "Machine Learning"
+    assert result.immediate_next.next_steps[0].action == "Complete Andrew Ng's Machine Learning Specialization on Coursera"
+    assert result.immediate_next.next_steps[0].summary == "Andrew Ng ML — Coursera"
+
+def test_build_career_ladder_full_ladder_next_steps_empty():
+    req = ProgressRequest(session_id="test-session", current_role="Data Analyst", user_skill_names=["Python"])
+    with patch("services.career_ladder.openai_client.chat.completions.create",
+               return_value=make_mock_completion(MOCK_LADDER_JSON)):
+        with patch("services.career_ladder.log_interaction"):
+            with patch("services.career_ladder.skillsfuture.get_skills_for_role", return_value=[]):
+                result = build_career_ladder(req, "test-session")
+    assert result.full_ladder[0].next_steps == []

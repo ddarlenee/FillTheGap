@@ -1,7 +1,7 @@
 import json
 from openai import OpenAI
 from config import settings
-from models.schemas import ProgressRequest, ProgressResponse, CareerRung, Milestone
+from models.schemas import ProgressRequest, ProgressResponse, CareerRung, CareerNextStep, Milestone
 from services.interaction_logger import log_interaction
 from data.skillsfuture_loader import skillsfuture
 
@@ -16,6 +16,12 @@ For each future role provide:
 - skill_delta: list of new skills needed that the user doesn't currently have
 - why_good_fit: one sentence explaining transferability from user's background
 - milestones: 2–4 concrete, specific steps to reach THIS role from the previous rung (empty list for distant future roles)
+- next_steps: for the FIRST (closest) rung ONLY, provide 1–2 actionable learning steps per skill_delta item. Each step must reference a specific platform, course, project, or tool. Leave next_steps as [] for all other rungs.
+
+Each next_step object:
+- skill: the skill_delta item this step addresses (must match the skill_delta entry exactly)
+- action: one sentence describing the specific learning action (e.g. "Complete the MLOps Fundamentals course on Coursera")
+- summary: a version of action in 8 words or fewer (e.g. "MLOps Fundamentals — Coursera")
 
 Also identify the long_term_destination: the most senior role this path leads toward.
 
@@ -23,7 +29,26 @@ Return ONLY valid JSON:
 {
   "long_term_destination": "...",
   "ladder": [
-    {"role": "...", "transferability_score": 0, "skill_delta": [], "why_good_fit": "...", "milestones": [{"description": "...", "skill_focus": "..."}]}
+    {
+      "role": "...",
+      "transferability_score": 0,
+      "skill_delta": ["Skill A", "Skill B"],
+      "why_good_fit": "...",
+      "milestones": [{"description": "...", "skill_focus": "..."}],
+      "next_steps": [
+        {"skill": "Skill A", "action": "Complete the Skill A Fundamentals course on Coursera", "summary": "Skill A Fundamentals — Coursera"},
+        {"skill": "Skill A", "action": "Build a project applying Skill A end-to-end", "summary": "Build Skill A project"},
+        {"skill": "Skill B", "action": "Follow the official Skill B tutorial and implement the sample project", "summary": "Skill B official tutorial"}
+      ]
+    },
+    {
+      "role": "...",
+      "transferability_score": 0,
+      "skill_delta": ["Skill C"],
+      "why_good_fit": "...",
+      "milestones": [],
+      "next_steps": []
+    }
   ]
 }
 Order ladder from closest to most distant future role."""
@@ -58,6 +83,7 @@ def build_career_ladder(request: ProgressRequest, session_id: str) -> ProgressRe
             skill_delta=r["skill_delta"],
             why_good_fit=r["why_good_fit"],
             milestones=[Milestone(**m) for m in r.get("milestones", [])],
+            next_steps=[CareerNextStep(**s) for s in r.get("next_steps", [])],
         )
         for r in data["ladder"]
     ]
