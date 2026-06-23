@@ -16,8 +16,10 @@ async def upload_resume(
 ):
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated.")
-    email = decode_token(authorization.removeprefix("Bearer "))
-    if not email:
+    try:
+        payload = decode_token(authorization.removeprefix("Bearer "))
+        email = payload["sub"]
+    except (ValueError, KeyError):
         raise HTTPException(status_code=401, detail="Invalid or expired token.")
 
     if file:

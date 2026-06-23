@@ -21,3 +21,8 @@ export async function fetchHistory(token: string) {
   })
   return res.data.history
 }
+
+export async function completeHistoryStep(entryId: string, stepIndex: number) {
+  const res = await apiClient.post(`/api/auth/history/${entryId}/complete-step`, { step_index: stepIndex })
+  return res.data
+}

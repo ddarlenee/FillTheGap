@@ -5,12 +5,13 @@ import type { AnalyseResponse, ProgressResponse } from '../types'
 interface SessionState {
   token: string | null
   userEmail: string | null
+  userName: string | null
   resumeText: string | null
   selectedRole: string | null
   mode: 'target' | 'auto'
   analysisResult: AnalyseResponse | null
   progressResult: ProgressResponse | null
-  setAuth: (token: string, email: string) => void
+  setAuth: (token: string, email: string, name?: string) => void
   logout: () => void
   setResumeText: (text: string) => void
   setSelectedRole: (role: string) => void
@@ -25,14 +26,15 @@ export const useSessionStore = create<SessionState>()(
     (set) => ({
       token: null,
       userEmail: null,
+      userName: null,
       resumeText: null,
       selectedRole: null,
       mode: 'target',
       analysisResult: null,
       progressResult: null,
-      setAuth: (token, email) => set({ token, userEmail: email }),
+      setAuth: (token, email, name) => set({ token, userEmail: email, userName: name ?? null }),
       logout: () => set({
-        token: null, userEmail: null, resumeText: null,
+        token: null, userEmail: null, userName: null, resumeText: null,
         selectedRole: null, mode: 'target', analysisResult: null, progressResult: null,
       }),
       setResumeText: (text) => set({ resumeText: text }),
@@ -45,6 +47,6 @@ export const useSessionStore = create<SessionState>()(
         mode: 'target', analysisResult: null, progressResult: null,
       }),
     }),
-    { name: 'skills-analyser-auth', partialize: (s) => ({ token: s.token, userEmail: s.userEmail }) }
+    { name: 'skills-analyser-auth', partialize: (s) => ({ token: s.token, userEmail: s.userEmail, userName: s.userName }) }
   )
 )

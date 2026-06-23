@@ -30,7 +30,7 @@ export default function UploadPage() {
 
   return (
     <div className="max-w-2xl mx-auto mt-16 p-8">
-      <h1 className="text-3xl font-bold mb-2 text-gray-900">Skills Analyser</h1>
+      <h1 className="text-3xl font-bold mb-2 text-gray-900">FillTheGap</h1>
       <p className="text-gray-500 mb-8">Get a personalised skills gap analysis and career roadmap.</p>
 
       {/* Step 1 — pick path */}

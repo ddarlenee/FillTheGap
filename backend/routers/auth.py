@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, EmailStr
-from services.auth_service import register_user, login_user, create_token, decode_token, get_history
+from services.auth_service import register_user, login_user, create_token, decode_token, get_history, complete_step
 from services.session_store import load_session
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -59,6 +59,25 @@ def history(authorization: str = Header(...)):
         return {"history": get_history(payload["sub"])}
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+
+class CompleteStepRequest(BaseModel):
+    step_index: int
+
+
+@router.post("/history/{entry_id}/complete-step")
+def toggle_step(entry_id: str, req: CompleteStepRequest, authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid token.")
+    try:
+        payload = decode_token(authorization.removeprefix("Bearer "))
+        email = payload["sub"]
+    except (ValueError, KeyError):
+        raise HTTPException(status_code=401, detail="Invalid or expired token.")
+    updated = complete_step(email, entry_id, req.step_index)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Entry or step not found.")
+    return updated
 
 
 @router.get("/restore")

@@ -119,7 +119,7 @@ export default function GapDashboardPage() {
         </div>
         <div>
           <h2 className="font-semibold mb-3 text-gray-700">Role Requirements</h2>
-          <TieredSkillList skills={tiered_role_skills} />
+          <TieredSkillList skills={tiered_role_skills} userSkills={user_skills} />
         </div>
         <div>
           <h2 className="font-semibold mb-3 text-gray-700">Gap Summary</h2>

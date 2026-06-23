@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store/useAuthStore'
+import { useSessionStore } from '../store/useSessionStore'
 import { login, register } from '../api/auth'
 
 export default function AuthPage() {
   const navigate = useNavigate()
-  const { setAuth } = useAuthStore()
+  const { setAuth } = useSessionStore()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -20,7 +20,7 @@ export default function AuthPage() {
       const res = isLogin
         ? await login(email, password)
         : await register(email, password, name)
-      setAuth(res.access_token, res.user)
+      setAuth(res.access_token, res.user.email, res.user.name)
       navigate('/')
     } catch (e: any) {
       setError(e?.response?.data?.detail ?? 'Something went wrong')
@@ -32,7 +32,7 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="bg-white border rounded-2xl shadow-sm p-10 w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-1">Skills Analyser</h1>
+        <h1 className="text-2xl font-bold mb-1">FillTheGap</h1>
         <p className="text-gray-400 text-sm mb-8">{isLogin ? 'Sign in to track your progress' : 'Create an account'}</p>
 
         {!isLogin && (

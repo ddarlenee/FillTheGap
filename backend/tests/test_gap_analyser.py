@@ -16,21 +16,43 @@ TIERED_SKILLS = [
     TieredSkill(name="Tableau", tier="Nice-to-have", reasoning="Visualisation"),
 ]
 
+MOCK_GAP_JSON = json.dumps({
+    "matches": [
+        {"role_skill": "Python", "matched_by": ["Python"]},
+        {"role_skill": "SQL", "matched_by": ["SQL"]},
+    ],
+    "unmatched": ["Machine Learning", "Tableau"],
+})
+
+def make_mock_completion(content: str):
+    mock = MagicMock()
+    mock.choices[0].message.content = content
+    return mock
+
 def test_analyse_gaps_identifies_missing():
-    gaps, score = analyse_gaps(USER_SKILLS, TIERED_SKILLS)
+    with patch("services.gap_analyser.openai_client.chat.completions.create",
+               return_value=make_mock_completion(MOCK_GAP_JSON)):
+        with patch("services.gap_analyser.log_interaction"):
+            gaps, score, _ = analyse_gaps(USER_SKILLS, TIERED_SKILLS, "test-session")
     gap_names = [g.skill for g in gaps]
     assert "Machine Learning" in gap_names
     assert "Python" not in gap_names
     assert "SQL" not in gap_names
 
 def test_analyse_gaps_sorts_essential_first():
-    gaps, _ = analyse_gaps(USER_SKILLS, TIERED_SKILLS)
+    with patch("services.gap_analyser.openai_client.chat.completions.create",
+               return_value=make_mock_completion(MOCK_GAP_JSON)):
+        with patch("services.gap_analyser.log_interaction"):
+            gaps, _, __ = analyse_gaps(USER_SKILLS, TIERED_SKILLS, "test-session")
     tier_order = {"Essential": 0, "Important": 1, "Nice-to-have": 2}
     orders = [tier_order[g.tier] for g in gaps]
     assert orders == sorted(orders)
 
 def test_coverage_score_values():
-    _, score = analyse_gaps(USER_SKILLS, TIERED_SKILLS)
+    with patch("services.gap_analyser.openai_client.chat.completions.create",
+               return_value=make_mock_completion(MOCK_GAP_JSON)):
+        with patch("services.gap_analyser.log_interaction"):
+            _, score, __ = analyse_gaps(USER_SKILLS, TIERED_SKILLS, "test-session")
     assert score.essential == "2/2"
     assert score.important == "0/1"
     assert score.nice_to_have == "0/1"

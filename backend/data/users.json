@@ -1,0 +1,305 @@
+{
+  "darlenesoonzn@gmail.com": {
+    "id": "3e23028e-5088-4817-bf92-c9143d8ca856",
+    "email": "darlenesoonzn@gmail.com",
+    "name": "Soon Zi Ni Darlene",
+    "hashed_password": "$2b$12$cHbObsClHdU0SzF0NBjtdeKuMk2ZVc3phDf.5hR9g.AjclywP0Wn6",
+    "history": [
+      {
+        "id": "3c94f067-b2dc-41e8-b604-df686c4ef4a6",
+        "timestamp": "2026-06-23T16:52:22.359639+00:00",
+        "role": "Account Operations Analyst",
+        "coverage": {
+          "essential": "0/1",
+          "important": "3/11"
+        },
+        "gaps": [
+          "Financial Statements Review",
+          "Business Planning",
+          "Standard Operating Procedures Development",
+          "Collateral Management",
+          "Ethical Culture"
+        ]
+      },
+      {
+        "id": "e69afd46-3cde-40a4-bf03-14d62c529a5e",
+        "timestamp": "2026-06-23T16:54:41.484516+00:00",
+        "role": "Analyst - Analytics and Customer Insights",
+        "coverage": {
+          "essential": "0/0",
+          "important": "1/5"
+        },
+        "gaps": [
+          "Market Research",
+          "Customer Behaviour Analysis",
+          "Data Visualisation",
+          "Concept Creation",
+          "Research"
+        ]
+      },
+      {
+        "id": "63da1c61-e622-4213-85ae-f7458b328b7d",
+        "timestamp": "2026-06-23T17:00:54.348112+00:00",
+        "role": "Software Engineer",
+        "coverage": {
+          "essential": "3/4",
+          "important": "4/18"
+        },
+        "gaps": [
+          "Solution Architecture",
+          "Business Requirements Mapping",
+          "Business Needs Analysis",
+          "Applications Support and Enhancement",
+          "Configuration Tracking"
+        ]
+      },
+      {
+        "id": "14aec00e-2626-4b2a-abd7-176d376c4676",
+        "timestamp": "2026-06-23T17:12:38.229280+00:00",
+        "role": "Data Analyst",
+        "coverage": {
+          "essential": "0/0",
+          "important": "3/13",
+          "nice_to_have": "0/0"
+        },
+        "gaps": [
+          "Emerging Technology Synthesis",
+          "Data Governance",
+          "Project Management",
+          "Ethical Culture",
+          "Data Storytelling and Visualisation",
+          "Data Mining and Modelling",
+          "Impact Indicators, Measurement and Reporting",
+          "Stakeholder Management",
+          "Sustainability Risk Management",
+          "Sustainability Reporting"
+        ]
+      },
+      {
+        "id": "2c15e8c8-de84-481f-b44e-b0fd44a2ca5d",
+        "timestamp": "2026-06-23T17:14:04.296875+00:00",
+        "role": "Data Analyst",
+        "coverage": {
+          "essential": "0/0",
+          "important": "4/13",
+          "nice_to_have": "0/0"
+        },
+        "gaps": [
+          "Emerging Technology Synthesis",
+          "Data Governance",
+          "Ethical Culture",
+          "Data Storytelling and Visualisation",
+          "Data Mining and Modelling",
+          "Impact Indicators, Measurement and Reporting",
+          "Stakeholder Management",
+          "Sustainability Risk Management",
+          "Sustainability Reporting"
+        ]
+      },
+      {
+        "id": "5c503097-f385-4040-ba01-c2bd5a01cbb4",
+        "timestamp": "2026-06-23T17:23:18.448278+00:00",
+        "role": "Data Analyst",
+        "coverage": {
+          "essential": "2/2",
+          "important": "1/6",
+          "nice_to_have": "1/5"
+        },
+        "gaps": [
+          "Sustainability Reporting",
+          "Data Storytelling and Visualisation",
+          "Data Governance",
+          "Data Mining and Modelling",
+          "Stakeholder Management",
+          "Emerging Technology Synthesis",
+          "Ethical Culture",
+          "Sustainability Risk Management",
+          "Impact Indicators, Measurement and Reporting"
+        ],
+        "next_steps": [
+          "Enroll in 'Data Storytelling for Business' by Storylytics to enhance your skills in data storytelling and visualisation.",
+          "Take the 'Data Governance Fundamentals' course on LinkedIn Learning to build a solid foundation in data governance practices.",
+          "Join the 'Introduction to Data Mining' course on Coursera offered by the University of Illinois to improve your skills in data mining and modelling.",
+          "Complete the 'Introduction to Data Analytics' course by IBM on Coursera, which includes a module on stakeholder management.",
+          "Attend the 'Sustainability Reporting and Analysis' workshop by GRI Academy to bridge your knowledge gap in sustainability reporting."
+        ],
+        "user_skills": [
+          "Python",
+          "SQL",
+          "Web Development",
+          "JavaScript",
+          "HTML",
+          "CSS",
+          "Database Management",
+          "AWS",
+          "Microsoft Excel",
+          "Project Management",
+          "Team Leadership",
+          "Cybersecurity",
+          "Data Analytics",
+          "Cloud Infrastructure",
+          "AI Integration",
+          "User Experience (UX) Design",
+          "Mandarin Chinese"
+        ]
+      },
+      {
+        "id": "ef3afe9e-7520-414e-a0a5-57f48ade1c96",
+        "timestamp": "2026-06-23T17:26:25.896075+00:00",
+        "role": "Software Engineer",
+        "coverage": {
+          "essential": "1/2",
+          "important": "0/3",
+          "nice_to_have": "1/3"
+        },
+        "gaps": [
+          "Software Design",
+          "Software Testing",
+          "Quality Standards",
+          "Project Management",
+          "Performance Management",
+          "Business Requirements Mapping"
+        ],
+        "next_steps": [
+          {
+            "text": "Enroll in the 'Software Design and Architecture Specialization' course on Coursera by University of Alberta to enhance your foundational knowledge in software design.",
+            "skill": "",
+            "completed": true
+          },
+          "Take the 'Software Testing and Automation' course on edX by Columbia University to improve your understanding and skills in software testing practices.",
+          {
+            "text": "Study the IEEE Software & Systems Engineering Standards available on IEEE Xplore to familiarize yourself with industry-standard quality practices.",
+            "skill": "",
+            "completed": true
+          },
+          "Complete the 'Project Management Principles and Practices Specialization' on Coursera by University of California, Irvine to gain insights into effective project management.",
+          "Explore the 'Business Analysis & Requirements Management' course on LinkedIn Learning to improve skills in mapping business requirements."
+        ],
+        "user_skills": [
+          "Python",
+          "SQL",
+          "Full-Stack Web Development",
+          "JavaScript",
+          "HTML",
+          "CSS",
+          "SQLite",
+          "MongoDB",
+          "AWS",
+          "Microsoft Excel",
+          "AI Integration",
+          "Web Application Development",
+          "Cybersecurity",
+          "Data Analytics",
+          "Cloud Infrastructure",
+          "Software Development",
+          "Teaching",
+          "User Experience Optimization",
+          "Community Outreach",
+          "Leadership"
+        ]
+      },
+      {
+        "id": "ca42c163-7208-4ebc-be69-755ea48b22a6",
+        "timestamp": "2026-06-23T17:37:04.413324+00:00",
+        "role": "Account Operations Analyst",
+        "coverage": {
+          "essential": "0/1",
+          "important": "1/3",
+          "nice_to_have": "2/8"
+        },
+        "gaps": [
+          "Financial Statements Review",
+          "Regulatory Compliance",
+          "Business Planning",
+          "Standard Operating Procedures Development",
+          "Collateral Management",
+          "Ethical Culture",
+          "Customer Acceptance Checking and Onboarding",
+          "Business Requirements Mapping",
+          "Data Governance"
+        ],
+        "next_steps": [
+          "Enroll in the 'Financial Accounting - Foundations' course on Coursera offered by the University of Illinois to develop skills in Financial Statements Review.",
+          "Take the 'Regulatory Compliance Specialization' on Coursera to understand the regulatory compliance frameworks and requirements.",
+          "Participate in a workshop or online seminar on business planning, such as the 'Strategic Business Planning Workshop' offered by the American Management Association.",
+          "Find free resources or guides online for SOP development and start drafting a sample SOP relevant to account operations.",
+          "Explore LinkedIn Learning for courses or resources on business requirements mapping, such as 'Business Analysis Foundations: Business Process Modeling.'"
+        ],
+        "user_skills": [
+          "Full-stack Web Development",
+          "Python",
+          "SQL",
+          "JavaScript",
+          "HTML",
+          "CSS",
+          "SQLite",
+          "MongoDB",
+          "AWS",
+          "Microsoft Excel",
+          "Cybersecurity",
+          "Data Analytics",
+          "Cloud Infrastructure",
+          "Software Development",
+          "AI Integration",
+          "UX Optimization",
+          "Team Leadership",
+          "Community Outreach",
+          "Mentoring"
+        ]
+      },
+      {
+        "id": "45b6cc4f-7dfd-4061-8a19-1506c0c9a907",
+        "timestamp": "2026-06-23T17:38:54.747150+00:00",
+        "role": "Artificial Intelligence / Machine Learning Engineer",
+        "coverage": {
+          "essential": "0/4",
+          "important": "1/8",
+          "nice_to_have": "4/8"
+        },
+        "gaps": [
+          "Data Strategy",
+          "Computational Modelling",
+          "Pattern Recognition Systems",
+          "Data Design",
+          "Emerging Technology Synthesis",
+          "Intelligent Reasoning",
+          "Data Governance",
+          "Text Analytics and Processing",
+          "Self-Learning Systems",
+          "Business Needs Analysis",
+          "Computer Vision Technology",
+          "Project Management",
+          "Configuration Tracking",
+          "Test Planning",
+          "Stakeholder Management"
+        ],
+        "next_steps": [
+          "Enroll in the 'Data Strategy Specialization' on Coursera by the University of Virginia to gain insights on formulating and implementing a data strategy, including case studies and practical applications.",
+          "Take the 'Computational Modeling and Data Science\u2019 course offered by MIT on edX to build a strong foundation in computational modeling techniques applicable to AI and machine learning projects.",
+          "Complete the 'Pattern Recognition and Machine Learning\u2019 course on Coursera provided by the Lule\u00e5 University of Technology to dive into core techniques used to identify patterns in data.",
+          "Join the 'Data Strategy & Design for AI' online workshop by DataCamp to understand how to design data pipelines and architectures effectively for machine learning workflows.",
+          "Attend the 'Emerging Technologies and Intelligent Systems' seminar series from IEEE Explore for a deep dive into current trends and future directions in AI technologies."
+        ],
+        "user_skills": [
+          "Full-stack Web Development",
+          "Python",
+          "SQL",
+          "HTML",
+          "CSS",
+          "JavaScript",
+          "Database Management",
+          "AWS",
+          "Microsoft Excel",
+          "Cybersecurity",
+          "Data Analytics",
+          "Cloud Infrastructure",
+          "AI Integration",
+          "Team Leadership",
+          "User Experience Optimization",
+          "Community Outreach",
+          "Teaching"
+        ]
+      }
+    ]
+  }
+}

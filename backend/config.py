@@ -1,3 +1,4 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -8,6 +9,6 @@ class Settings(BaseSettings):
     jwt_expire_hours: int = 24
 
     class Config:
-        env_file = ".env"
+        env_file = Path(__file__).parent / ".env"
 
 settings = Settings()

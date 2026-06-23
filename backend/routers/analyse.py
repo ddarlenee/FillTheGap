@@ -88,8 +88,10 @@ def analyse(request: AnalyseRequest, authorization: str = Header(...)):
             save_analysis(
                 email,
                 primary_role,
-                {"essential": coverage.essential, "important": coverage.important},
-                [{"skill": g.skill} for g in gaps],
+                {"essential": coverage.essential, "important": coverage.important, "nice_to_have": coverage.nice_to_have},
+                [{"skill": g.skill, "tier": g.tier} for g in gaps],
+                next_steps=next_steps,
+                user_skills=[s.name for s in user_skills],
             )
         except Exception:
             pass

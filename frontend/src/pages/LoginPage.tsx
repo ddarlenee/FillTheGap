@@ -19,9 +19,9 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const res = await login(email, password)
-      setAuth(res.token, res.email)
+      setAuth(res.access_token, res.user.email, res.user.name)
       const restore = await apiClient.get('/api/auth/restore', {
-        headers: { Authorization: `Bearer ${res.token}` },
+        headers: { Authorization: `Bearer ${res.access_token}` },
       })
       if (restore.data.session?.analyse) {
         setAnalysisResult(restore.data.session.analyse as AnalyseResponse)
@@ -40,7 +40,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Skills Analyser</h1>
+          <h1 className="text-3xl font-bold text-gray-900">FillTheGap</h1>
           <p className="text-gray-500 mt-2">Sign in to your account</p>
         </div>
 

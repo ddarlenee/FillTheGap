@@ -44,12 +44,26 @@ DEMO_DATA: dict[str, list[str]] = {
 }
 
 
+def _level_to_int(level: str) -> int:
+    """Convert a raw proficiency level string to a comparable integer."""
+    s = str(level).strip().lower()
+    mapping = {"basic": 1, "foundation": 2, "intermediate": 3, "advanced": 5, "expert": 5, "distinguished": 6}
+    if s in mapping:
+        return mapping[s]
+    try:
+        return int(float(s))
+    except (ValueError, TypeError):
+        return 0
+
+
 class SkillsFutureLoader:
     def __init__(self):
         self._role_index: dict[str, list[str]] = {}
         self._all_roles: list[str] = []
-        # (role_lower, skill_lower) -> raw proficiency string e.g. "3", "Advanced"
+        # (role_lower, skill_lower) -> raw proficiency string with HIGHEST level seen
         self._proficiency_index: dict[tuple[str, str], str] = {}
+        # (role_lower, skill_lower) -> TSC or CCS type
+        self._type_index: dict[tuple[str, str], str] = {}
 
     def load(self):
         data_dir = Path(settings.skillsfuture_data_dir)
@@ -89,18 +103,27 @@ class SkillsFutureLoader:
         if not {"Job Role", "TSC_CCS Title"}.issubset(df.columns):
             return
         has_level = "Proficiency Level" in df.columns
+        has_type = "TSC_CCS Type" in df.columns
         for _, row in df.iterrows():
             role = str(row["Job Role"]).strip()
             skill = str(row["TSC_CCS Title"]).strip()
             if not role or not skill or role == "nan" or skill == "nan":
                 continue
+            key = (role.lower(), skill.lower())
             self._role_index.setdefault(role, [])
             if skill not in self._role_index[role]:
                 self._role_index[role].append(skill)
             if has_level:
                 raw = str(row["Proficiency Level"]).strip()
                 if raw and raw != "nan":
-                    self._proficiency_index[(role.lower(), skill.lower())] = raw
+                    existing = self._proficiency_index.get(key)
+                    # Keep the highest proficiency level seen for this role+skill pair
+                    if existing is None or _level_to_int(raw) > _level_to_int(existing):
+                        self._proficiency_index[key] = raw
+            if has_type:
+                raw_type = str(row["TSC_CCS Type"]).strip().lower()
+                if raw_type and raw_type != "nan":
+                    self._type_index[key] = raw_type
 
     def _extract_pairs(self, df: pd.DataFrame):
         role_keywords = {"job role", "role title", "occupation", "job title"}
@@ -134,7 +157,11 @@ class SkillsFutureLoader:
         return self._role_index.get(role, [])
 
     def get_proficiency(self, role: str, skill: str) -> str | None:
-        """Return the raw proficiency label for a role+skill, e.g. '3' or 'Advanced'."""
+        """Return the highest proficiency level seen for a role+skill pair."""
         return self._proficiency_index.get((role.lower(), skill.lower()))
+
+    def get_skill_type(self, role: str, skill: str) -> str | None:
+        """Return 'tsc' or 'ccs' for a role+skill pair."""
+        return self._type_index.get((role.lower(), skill.lower()))
 
 skillsfuture = SkillsFutureLoader()

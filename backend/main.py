@@ -7,17 +7,14 @@ from routers import session as session_router
 from routers import roles as roles_router
 from routers import analyse as analyse_router
 from routers import progress as progress_router
-from routers import auth as auth_router
 from data.skillsfuture_loader import skillsfuture
-from services.user_store import init_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
     skillsfuture.load()
     yield
 
-app = FastAPI(title="Skills Analyser", lifespan=lifespan)
+app = FastAPI(title="FillTheGap", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,7 +29,6 @@ app.include_router(session_router.router, prefix="/api")
 app.include_router(roles_router.router, prefix="/api")
 app.include_router(analyse_router.router, prefix="/api")
 app.include_router(progress_router.router, prefix="/api")
-app.include_router(auth_router.router, prefix="/api")
 
 @app.get("/api/health")
 def health():
