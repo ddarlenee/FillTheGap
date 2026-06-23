@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from openai import OpenAI
 from config import settings
 from models.schemas import AnalyseRequest, AnalyseResponse
@@ -10,11 +10,12 @@ from services.gap_analyser import analyse_gaps
 from services.next_steps import generate_next_steps
 from services.session_store import load_session, save_session
 from services.interaction_logger import log_interaction
+from services.auth_service import decode_token
 
 router = APIRouter()
 openai_client = OpenAI(api_key=settings.openai_api_key)
 
-def _infer_top_roles(resume_text: str, session_id: str) -> list[str]:
+def _infer_top_roles(resume_text: str, user_key: str) -> list[str]:
     all_roles = skillsfuture.get_roles()
     roles_list = "\n".join(f"- {r}" for r in all_roles[:80])
     prompt = (
@@ -31,21 +32,25 @@ def _infer_top_roles(resume_text: str, session_id: str) -> list[str]:
         response_format={"type": "json_object"},
     )
     content = response.choices[0].message.content
-    log_interaction(session_id, "role_inference", prompt, content)
+    log_interaction(user_key, "role_inference", prompt, content)
     return json.loads(content).get("roles", all_roles[:3])
 
 @router.post("/analyse", response_model=AnalyseResponse)
-def analyse(request: AnalyseRequest):
-    try:
-        session_id = request.session_id
+def analyse(request: AnalyseRequest, authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated.")
+    email = decode_token(authorization.removeprefix("Bearer "))
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid or expired token.")
 
+    try:
         if request.target_role:
             target_roles = [request.target_role]
         else:
-            target_roles = _infer_top_roles(request.resume_text, session_id)
+            target_roles = _infer_top_roles(request.resume_text, email)
 
         primary_role = target_roles[0]
-        user_skills = extract_skills(request.resume_text, session_id)
+        user_skills = extract_skills(request.resume_text, email)
 
         role_skill_names = skillsfuture.get_skills_for_role(primary_role)
         if not role_skill_names:
@@ -55,19 +60,17 @@ def analyse(request: AnalyseRequest):
             (name, skillsfuture.get_proficiency(primary_role, name))
             for name in role_skill_names
         ]
-        tiered_skills = rank_skills(primary_role, skills_with_proficiency, session_id)
+        tiered_skills = rank_skills(primary_role, skills_with_proficiency, email)
 
-        gaps, coverage, matches_map = analyse_gaps(user_skills, tiered_skills, session_id)
+        gaps, coverage, matches_map = analyse_gaps(user_skills, tiered_skills, email)
 
-        # Annotate which user skills satisfied each role skill
         tiered_skills = [
             ts.model_copy(update={"matched_by": matches_map.get(ts.name, [])})
             for ts in tiered_skills
         ]
-        next_steps = generate_next_steps(primary_role, gaps, session_id)
+        next_steps = generate_next_steps(primary_role, gaps, email)
 
         result = AnalyseResponse(
-            session_id=session_id,
             target_roles=target_roles,
             user_skills=user_skills,
             tiered_role_skills=tiered_skills,
@@ -75,9 +78,10 @@ def analyse(request: AnalyseRequest):
             gaps=gaps,
             next_steps=next_steps,
         )
-        existing = load_session(session_id) or {}
+        existing = load_session(email) or {}
         existing["analyse"] = result.model_dump()
-        save_session(session_id, existing)
+        save_session(email, existing)
+
         return result
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=502, detail=f"AI response parse error: {e}")

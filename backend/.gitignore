@@ -1,4 +1,5 @@
 *.env
+*.db
 sessions/*
 !sessions/.gitkeep
 logs/*

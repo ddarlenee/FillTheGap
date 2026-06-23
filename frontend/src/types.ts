@@ -24,7 +24,6 @@ export interface CoverageScore {
 }
 
 export interface AnalyseResponse {
-  session_id: string
   target_roles: string[]
   user_skills: ExtractedSkill[]
   tiered_role_skills: TieredSkill[]

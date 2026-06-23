@@ -7,11 +7,10 @@ import CareerLadder from '../components/CareerLadder'
 
 export default function CareerProgressionPage() {
   const navigate = useNavigate()
-  const { sessionId, analysisResult, progressResult, setProgressResult } = useSessionStore()
+  const { analysisResult, progressResult, setProgressResult } = useSessionStore()
 
   const mutation = useMutation({
     mutationFn: () => postProgress({
-      session_id: sessionId!,
       current_role: analysisResult!.target_roles[0],
       user_skill_names: analysisResult!.user_skills.map((s) => s.name),
     }),

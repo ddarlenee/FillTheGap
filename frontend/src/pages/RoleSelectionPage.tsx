@@ -8,7 +8,7 @@ import { postAnalyse } from '../api/analyse'
 
 export default function RoleSelectionPage() {
   const navigate = useNavigate()
-  const { sessionId, resumeText, mode, selectedRole, setSelectedRole, setAnalysisResult } = useSessionStore()
+  const { resumeText, mode, selectedRole, setSelectedRole, setAnalysisResult } = useSessionStore()
   const [query, setQuery] = useState('')
 
   const { data: roles = [] } = useQuery({
@@ -19,7 +19,6 @@ export default function RoleSelectionPage() {
 
   const mutation = useMutation({
     mutationFn: () => postAnalyse({
-      session_id: sessionId!,
       resume_text: resumeText!,
       target_role: mode === 'target' ? selectedRole ?? undefined : undefined,
     }),
@@ -36,10 +35,10 @@ export default function RoleSelectionPage() {
     : null
 
   useEffect(() => {
-    if (!sessionId || !resumeText) navigate('/')
-  }, [sessionId, resumeText, navigate])
+    if (!resumeText) navigate('/')
+  }, [resumeText, navigate])
 
-  if (!sessionId || !resumeText) return null
+  if (!resumeText) return null
 
   return (
     <div className="max-w-2xl mx-auto mt-16 p-8">

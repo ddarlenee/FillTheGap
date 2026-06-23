@@ -11,14 +11,13 @@ export default function UploadPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
-  const { setSessionId, setResumeText, setMode: storeSetMode } = useSessionStore()
+  const { setResumeText, setMode: storeSetMode } = useSessionStore()
 
   async function handleSubmit(file?: File) {
     setLoading(true)
     setError('')
     try {
       const result = await postUpload({ file, text: file ? undefined : text })
-      setSessionId(result.session_id)
       setResumeText(result.resume_text)
       storeSetMode(mode)
       navigate('/role-selection')
@@ -32,10 +31,43 @@ export default function UploadPage() {
   return (
     <div className="max-w-2xl mx-auto mt-16 p-8">
       <h1 className="text-3xl font-bold mb-2 text-gray-900">Skills Analyser</h1>
-      <p className="text-gray-500 mb-8">Upload your resume to get a personalised skills gap analysis and career roadmap.</p>
+      <p className="text-gray-500 mb-8">Get a personalised skills gap analysis and career roadmap.</p>
 
+      {/* Step 1 — pick path */}
+      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Step 1 — What are you looking for?</p>
+      <div className="grid grid-cols-2 gap-3 mb-8">
+        <button
+          onClick={() => setMode('target')}
+          className={`rounded-xl border-2 p-4 text-left transition-all ${
+            mode === 'target'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+          }`}
+        >
+          <div className={`text-lg mb-1 font-semibold ${mode === 'target' ? 'text-blue-700' : 'text-gray-800'}`}>
+            🎯 Target role
+          </div>
+          <p className="text-xs text-gray-500 leading-relaxed">I know the role I want — show me what I'm missing</p>
+        </button>
+        <button
+          onClick={() => setMode('auto')}
+          className={`rounded-xl border-2 p-4 text-left transition-all ${
+            mode === 'auto'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+          }`}
+        >
+          <div className={`text-lg mb-1 font-semibold ${mode === 'auto' ? 'text-blue-700' : 'text-gray-800'}`}>
+            ✨ Best fit
+          </div>
+          <p className="text-xs text-gray-500 leading-relaxed">Not sure yet — match me to roles that suit my skills</p>
+        </button>
+      </div>
+
+      {/* Step 2 — upload */}
+      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Step 2 — Upload your resume</p>
       <div
-        className={`border-2 border-dashed rounded-xl p-10 text-center mb-6 cursor-pointer transition-colors ${dragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
+        className={`border-2 border-dashed rounded-xl p-10 text-center mb-4 cursor-pointer transition-colors ${dragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleSubmit(f) }}
@@ -54,21 +86,6 @@ export default function UploadPage() {
         onChange={(e) => setText(e.target.value)}
       />
 
-      <div className="flex gap-4 mb-6">
-        <button
-          onClick={() => setMode('target')}
-          className={`flex-1 py-2 rounded-lg border font-medium transition-colors ${mode === 'target' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'}`}
-        >
-          I know my target role
-        </button>
-        <button
-          onClick={() => setMode('auto')}
-          className={`flex-1 py-2 rounded-lg border font-medium transition-colors ${mode === 'auto' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'}`}
-        >
-          Show me what fits
-        </button>
-      </div>
-
       {text && (
         <button
           onClick={() => handleSubmit()}
@@ -80,50 +97,6 @@ export default function UploadPage() {
       )}
 
       {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
-
-      <div className="mt-8 border-t pt-6">
-        <p className="text-sm text-gray-400 mb-2">Have a session ID? Resume your pathway:</p>
-        <ResumeSession />
-      </div>
-    </div>
-  )
-}
-
-function ResumeSession() {
-  const navigate = useNavigate()
-  const [id, setId] = useState('')
-  const { setSessionId, setAnalysisResult } = useSessionStore()
-
-  async function handleResume() {
-    try {
-      const res = await fetch(`http://localhost:8000/api/session/${id}`)
-      if (!res.ok) throw new Error('Not found')
-      const data = await res.json()
-      setSessionId(id)
-      if (data.analyse) {
-        setAnalysisResult(data.analyse)
-        navigate('/gap-dashboard')
-      }
-    } catch {
-      alert('Session not found. Check the ID and try again.')
-    }
-  }
-
-  return (
-    <div className="flex gap-2">
-      <input
-        className="flex-1 border rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-        placeholder="Session ID (e.g. 3f8a2c1d-...)"
-        value={id}
-        onChange={(e) => setId(e.target.value)}
-      />
-      <button
-        onClick={handleResume}
-        disabled={!id}
-        className="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-800"
-      >
-        Resume
-      </button>
     </div>
   )
 }

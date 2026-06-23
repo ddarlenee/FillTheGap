@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from typing import Optional
 
 class UploadResponse(BaseModel):
-    session_id: str
     resume_text: str
 
 class ExtractedSkill(BaseModel):
@@ -27,12 +26,10 @@ class CoverageScore(BaseModel):
     nice_to_have: str
 
 class AnalyseRequest(BaseModel):
-    session_id: str
     resume_text: str
     target_role: Optional[str] = None  # None triggers auto-fit mode
 
 class AnalyseResponse(BaseModel):
-    session_id: str
     target_roles: list[str]
     user_skills: list[ExtractedSkill]
     tiered_role_skills: list[TieredSkill]
@@ -55,7 +52,6 @@ class CareerRung(BaseModel):
     milestones: list[Milestone]
 
 class ProgressRequest(BaseModel):
-    session_id: str
     current_role: str
     user_skill_names: list[str]
 
