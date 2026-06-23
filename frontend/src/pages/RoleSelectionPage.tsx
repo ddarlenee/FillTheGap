@@ -5,6 +5,7 @@ import axios from 'axios'
 import { useSessionStore } from '../store/useSessionStore'
 import { getRoles } from '../api/roles'
 import { postAnalyse } from '../api/analyse'
+import { useAuthStore } from '../store/useAuthStore'
 
 export default function RoleSelectionPage() {
   const navigate = useNavigate()
@@ -17,12 +18,14 @@ export default function RoleSelectionPage() {
     enabled: mode === 'target',
   })
 
+  const { token } = useAuthStore()
+
   const mutation = useMutation({
     mutationFn: () => postAnalyse({
       session_id: sessionId!,
       resume_text: resumeText!,
       target_role: mode === 'target' ? selectedRole ?? undefined : undefined,
-    }),
+    }, token),
     onSuccess: (data) => {
       setAnalysisResult(data)
       navigate('/gap-dashboard')

@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from routers import auth as auth_router
 from routers import upload as upload_router
 from routers import session as session_router
 from routers import roles as roles_router
@@ -27,6 +28,7 @@ app.include_router(session_router.router, prefix="/api")
 app.include_router(roles_router.router, prefix="/api")
 app.include_router(analyse_router.router, prefix="/api")
 app.include_router(progress_router.router, prefix="/api")
+app.include_router(auth_router.router, prefix="/api")
 
 @app.get("/api/health")
 def health():

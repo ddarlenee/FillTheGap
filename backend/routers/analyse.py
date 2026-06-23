@@ -1,5 +1,6 @@
 import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
+from typing import Optional
 from openai import OpenAI
 from config import settings
 from models.schemas import AnalyseRequest, AnalyseResponse
@@ -35,7 +36,7 @@ def _infer_top_roles(resume_text: str, session_id: str) -> list[str]:
     return json.loads(content).get("roles", all_roles[:3])
 
 @router.post("/analyse", response_model=AnalyseResponse)
-def analyse(request: AnalyseRequest):
+def analyse(request: AnalyseRequest, authorization: Optional[str] = Header(None)):
     try:
         session_id = request.session_id
 
@@ -78,7 +79,23 @@ def analyse(request: AnalyseRequest):
         existing = load_session(session_id) or {}
         existing["analyse"] = result.model_dump()
         save_session(session_id, existing)
+
+    
+        # Save to user history if logged in
+        if authorization:
+            try:
+                from services.auth_service import decode_token, save_analysis
+                payload = decode_token(authorization.replace("Bearer ", ""))
+                save_analysis(
+                    payload["sub"],
+                    primary_role,
+                    {"essential": coverage.essential, "important": coverage.important},
+                    [{"skill": g.skill} for g in gaps],
+                )
+            except Exception:
+                pass  # never fail the main request over history
         return result
+    
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=502, detail=f"AI response parse error: {e}")
     except HTTPException:
