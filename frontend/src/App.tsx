@@ -7,6 +7,7 @@ import RoleSelectionPage from './pages/RoleSelectionPage'
 import GapDashboardPage from './pages/GapDashboardPage'
 import CareerProgressionPage from './pages/CareerProgressionPage'
 import HistoryPage from './pages/HistoryPage'
+import SkillsPage from './pages/SkillsPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = useSessionStore((s) => s.token)
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/gap-dashboard" element={<AuthenticatedLayout><GapDashboardPage /></AuthenticatedLayout>} />
         <Route path="/career-progression" element={<AuthenticatedLayout><CareerProgressionPage /></AuthenticatedLayout>} />
         <Route path="/history" element={<AuthenticatedLayout><HistoryPage /></AuthenticatedLayout>} />
+        <Route path="/skills" element={<AuthenticatedLayout><SkillsPage /></AuthenticatedLayout>} />
       </Routes>
     </div>
   )

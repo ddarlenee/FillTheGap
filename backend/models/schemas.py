@@ -33,8 +33,9 @@ class NextStep(BaseModel):
     completed: bool = False
 
 class AnalyseRequest(BaseModel):
-    resume_text: str
-    target_role: Optional[str] = None  # None triggers auto-fit mode
+    resume_text: str = ""
+    target_role: Optional[str] = None
+    user_skill_names: Optional[list[str]] = None  # pre-extracted skills, bypasses resume parsing
 
 class AnalyseResponse(BaseModel):
     target_roles: list[str]

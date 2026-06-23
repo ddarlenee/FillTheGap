@@ -335,6 +335,461 @@
           "Community Outreach",
           "Teaching"
         ]
+      },
+      {
+        "id": "f72c1557-476e-49a4-b86e-455b8003e73b",
+        "timestamp": "2026-06-23T18:34:47.914991+00:00",
+        "role": "Software Engineer",
+        "coverage": {
+          "essential": "4/4",
+          "important": "6/6",
+          "nice_to_have": "1/17"
+        },
+        "gaps": [
+          {
+            "skill": "Performance Management",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Emerging Technology Synthesis",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Applications Support and Enhancement",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Problem Management",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Configuration Tracking",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Change Management",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Business Needs Analysis",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Data Design",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Business Risk Management",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Business Environment Analysis",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Stakeholder Management",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Budgeting",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Product Management",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "System Integration",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Software Configuration",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Business Negotiation",
+            "tier": "Nice-to-have"
+          }
+        ],
+        "next_steps": [
+          {
+            "summary": "Complete Applications Development Specialization on Coursera",
+            "text": "Full detail: Attend the 'Applications Development Specialization' on Coursera, offering insight into modern techniques for developing robust applications. This is crucial for software engineers to build scalable software solutions.",
+            "skill": "Applications Development",
+            "tier": "Essential",
+            "completed": true
+          },
+          {
+            "summary": "Enroll in Software Design Architecture Concepts on Udemy",
+            "text": "Full detail: Learn 'Software Design and Architecture' on Udemy to understand and implement software design principles. It's essential for creating systems that meet technical and functional requirements.",
+            "skill": "Software Design",
+            "tier": "Essential",
+            "completed": true
+          },
+          {
+            "summary": "Take Automated Software Testing on LinkedIn Learning",
+            "text": "Full detail: 'Automated Software Testing' on LinkedIn Learning teaches effective testing techniques and strategies essential for ensuring software quality and reliability.",
+            "skill": "Software Testing",
+            "tier": "Essential",
+            "completed": true
+          },
+          {
+            "summary": "Study Application Integration Concepts on Pluralsight",
+            "text": "Full detail: 'Application Integration Design Patterns' on Pluralsight covers methodologies for effectively integrating applications, which is vital for seamless software operations.",
+            "skill": "Applications Integration",
+            "tier": "Essential",
+            "completed": true
+          },
+          {
+            "summary": "Learn Quality Assurance Standards on edX",
+            "text": "Full detail: 'Quality Assurance and Quality Control' on edX provides frameworks for maintaining high product quality standards, aligning with industry best practices.",
+            "skill": "Quality Standards",
+            "tier": "Important",
+            "completed": true
+          },
+          {
+            "summary": "Join Database Administration Certification on IBM Skills",
+            "text": "Full detail: The 'Database Administration Fundamentals' certification course on IBM Skills helps deepen understanding of database environment functions necessary for data integrity and management.",
+            "skill": "Database Administration",
+            "tier": "Important",
+            "completed": true
+          },
+          {
+            "summary": "Participate in Solution Architecture Fundamentals on AWS Training",
+            "text": "Full detail: AWS offers 'Architecting on AWS', crucial to understand architectural best practices for scalable and efficient solution design.",
+            "skill": "Solution Architecture",
+            "tier": "Important",
+            "completed": true
+          },
+          {
+            "summary": "Explore UI Design Specialization on Coursera",
+            "text": "Full detail: The 'User Interface Design Specialization' on Coursera covers aesthetics and functionality in UI design, important for creating intuitive user experiences.",
+            "skill": "User Interface Design",
+            "tier": "Important",
+            "completed": true
+          },
+          {
+            "summary": "Attend Business Analysis Techniques on Udemy",
+            "text": "Full detail: 'Business Analysis Fundamentals' on Udemy teaches how to map and analyze business requirements, crucial for aligning solutions with business needs.",
+            "skill": "Business Requirements Mapping",
+            "tier": "Important",
+            "completed": true
+          },
+          {
+            "summary": "Take Test Planning Strategies on Pluralsight",
+            "text": "Full detail: The 'Test Planning for Software Development' course on Pluralsight focuses on strategic planning for comprehensive testing, crucial for quality assurance.",
+            "skill": "Test Planning",
+            "tier": "Important",
+            "completed": true
+          },
+          {
+            "summary": "Enroll in Performance Management Basics on Coursera",
+            "text": "Full detail: 'Fundamentals of Performance Management' on Coursera covers strategies for enhancing team and individual performance, useful for optimizing productivity.",
+            "skill": "Performance Management",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Study Emerging Technology Trends on edX",
+            "text": "Full detail: 'Emerging Technologies' on edX offers insights into new tech trends and innovations, crucial for staying competitive and informed in technology roles.",
+            "skill": "Emerging Technology Synthesis",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Learn Application Enhancement Techniques on LinkedIn Learning",
+            "text": "Full detail: 'Enhancing Application Performance' on LinkedIn Learning details strategies for maintaining and improving existing applications, necessary for sustained software quality.",
+            "skill": "Applications Support and Enhancement",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Explore Problem Management Processes on ITIL Training",
+            "text": "Full detail: ITIL offers a 'Problem Management' course focusing on managing IT incidents effectively to improve service delivery.",
+            "skill": "Problem Management",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Take Configuration Management Skills on Udemy",
+            "text": "Full detail: 'Configuration Management: Beyond the Basics' on Udemy covers tracking and controlling software changes, crucial for maintaining system integrity.",
+            "skill": "Configuration Tracking",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Study Change Management Principles on LinkedIn Learning",
+            "text": "Full detail: 'Change Management Foundations' on LinkedIn Learning provides essential strategies for implementing and managing change, important for adapting to new systems.",
+            "skill": "Change Management",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Attend Business Needs Analysis Course on edX",
+            "text": "Full detail: 'Business Needs Analysis' on edX helps in identifying and analyzing business requirements, crucial for developing relevant software solutions.",
+            "skill": "Business Needs Analysis",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Join Data Design Patterns Course on Coursera",
+            "text": "Full detail: 'Data-Driven Design' course on Coursera teaches the foundations of designing and structuring data, important for scalable and efficient database solutions.",
+            "skill": "Data Design",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Learn Risk Management Strategies on Udemy",
+            "text": "Full detail: 'Risk Management for Enterprises' on Udemy offers frameworks for identifying and mitigating business risks, essential for strategic decision-making.",
+            "skill": "Business Risk Management",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Study Business Environment Dynamics on Coursera",
+            "text": "Full detail: 'Understanding the Business Environment' on Coursera addresses market analysis techniques vital for strategic planning and competitive positioning.",
+            "skill": "Business Environment Analysis",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Train in Stakeholder Management on edX",
+            "text": "Full detail: 'Stakeholder Engagement' on edX provides strategies for effective stakeholder communication, ensuring project alignment with business objectives.",
+            "skill": "Stakeholder Management",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Complete Essentials of Budgeting on LinkedIn Learning",
+            "text": "Full detail: 'Budgeting and Forecasting' on LinkedIn Learning offers an overview of financial planning fundamentals, beneficial for resource allocation.",
+            "skill": "Budgeting",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Enroll in Product Management Essentials on Udemy",
+            "text": "Full detail: 'Become a Product Manager' on Udemy explores the lifecycle development of products, integrating cross-functional teams in tech environments.",
+            "skill": "Product Management",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Study System Integration Techniques on Pluralsight",
+            "text": "Full detail: 'System Integration Fundamentals' on Pluralsight teaches methods and tools for integrating diverse IT systems, crucial for holistic solutions.",
+            "skill": "System Integration",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Take Software Configuration Management Course on Coursera",
+            "text": "Full detail: 'Software Configuration Management' on Coursera covers best practices for managing code changes, ensuring efficiency and collaboration in software teams.",
+            "skill": "Software Configuration",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Learn Business Negotiation Techniques on edX",
+            "text": "Full detail: 'Business Negotiation Skills' on edX provides insight into negotiation strategies, useful for contract and stakeholder management.",
+            "skill": "Business Negotiation",
+            "tier": "Nice-to-have",
+            "completed": false
+          }
+        ],
+        "user_skills": [
+          "Python",
+          "SQL",
+          "JavaScript",
+          "HTML",
+          "CSS",
+          "Full-stack Web Development",
+          "AI Integration",
+          "Project Management",
+          "Cybersecurity",
+          "UX Optimization",
+          "Cloud Infrastructure",
+          "Leadership",
+          "Teaching",
+          "Community Outreach",
+          "Applications Development",
+          "Software Design",
+          "Software Testing",
+          "Applications Integration",
+          "Quality Standards",
+          "Database Administration",
+          "Solution Architecture",
+          "User Interface Design",
+          "Business Requirements Mapping",
+          "Test Planning"
+        ]
+      },
+      {
+        "id": "bc296362-f4bc-48a6-93b8-6ed9469172ab",
+        "timestamp": "2026-06-23T18:36:09.654021+00:00",
+        "role": "Data Analyst",
+        "coverage": {
+          "essential": "1/1",
+          "important": "4/4",
+          "nice_to_have": "1/8"
+        },
+        "gaps": [
+          {
+            "skill": "Data Governance",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Emerging Technology Synthesis",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Ethical Culture",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Impact Indicators, Measurement and Reporting",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Stakeholder Management",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Sustainability Risk Management",
+            "tier": "Nice-to-have"
+          },
+          {
+            "skill": "Sustainability Reporting",
+            "tier": "Nice-to-have"
+          }
+        ],
+        "next_steps": [
+          {
+            "summary": "Complete Data Mining Specialization on Coursera",
+            "text": "Full detail: Learn from the 'Data Mining' Specialization on Coursera, which covers basic data mining principles, model construction, and evaluation. This is crucial for analyzing complex data sets and creating predictive models as a Data Analyst.",
+            "skill": "Data Mining and Modelling",
+            "tier": "Important",
+            "completed": true
+          },
+          {
+            "summary": "Enroll in Data Visualization with Tableau on Udemy",
+            "text": "Full detail: 'Data Visualization with Tableau' on Udemy teaches you how to create powerful visual dashboards, an essential skill for conveying insights effectively to stakeholders in the Data Analyst role.",
+            "skill": "Data Storytelling and Visualisation",
+            "tier": "Important",
+            "completed": true
+          },
+          {
+            "summary": "Study Data Governance Principles on edX",
+            "text": "Full detail: The 'Data Governance and Stewardship' course on edX introduces key frameworks and policies for managing data integrity and privacy, important for maintaining quality standards in data analysis.",
+            "skill": "Data Governance",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Explore Technology Synthesis Techniques via Wharton Online",
+            "text": "Full detail: The 'Emerging Technologies: Business and Implications' course from Wharton Online helps synthesize new technology trends and their implications, beneficial for strategic data analysis.",
+            "skill": "Emerging Technology Synthesis",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Attend Ethical Leadership Online Course from MIT",
+            "text": "Full detail: The 'Ethical Leadership: Developing Moral Resilience' course from MIT helps foster an ethical mindset, valuable for decision-making in data-driven environments.",
+            "skill": "Ethical Culture",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Learn Impact Measurement on LinkedIn Learning",
+            "text": "Full detail: 'Impact Measurement and Management for the SDGs' on LinkedIn Learning teaches methodologies for measuring and reporting impact, relevant for analyzing and reporting data insights.",
+            "skill": "Impact Indicators, Measurement and Reporting",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Improve Stakeholder Management Techniques on Coursera",
+            "text": "Full detail: The 'Stakeholder Engagement Management' course on Coursera provides strategies for effective communication and relationship management, a key soft skill for data analysts dealing with diverse teams.",
+            "skill": "Stakeholder Management",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Understand Sustainability Risk via Harvard Online",
+            "text": "Full detail: 'Sustainable Business Strategy' on Harvard Online offers insights into identifying and managing sustainability risks, aligning with data gathering and analysis in sustainability contexts.",
+            "skill": "Sustainability Risk Management",
+            "tier": "Nice-to-have",
+            "completed": false
+          },
+          {
+            "summary": "Take Sustainability Reporting Workshop on edX",
+            "text": "Full detail: The 'Corporate Sustainability Reporting' workshop on edX covers frameworks for sustainability reporting, which supports a data analyst's role in preparing comprehensive and transparent reports.",
+            "skill": "Sustainability Reporting",
+            "tier": "Nice-to-have",
+            "completed": false
+          }
+        ],
+        "user_skills": [
+          "Python",
+          "SQL",
+          "Web Development",
+          "JavaScript",
+          "HTML",
+          "CSS",
+          "SQLite",
+          "MongoDB",
+          "AWS",
+          "Microsoft Excel",
+          "Leadership",
+          "AI Integration",
+          "Cybersecurity",
+          "Data Analytics",
+          "Cloud Infrastructure",
+          "Teaching",
+          "UX Optimization",
+          "Full-Stack Development",
+          "Resource Discovery Implementation",
+          "Python Workshop Facilitation",
+          "Community Outreach",
+          "Project Management",
+          "Data Mining and Modelling",
+          "Data Storytelling and Visualisation"
+        ]
+      },
+      {
+        "id": "45314377-e743-4a2a-8b2b-6b30110b54c1",
+        "timestamp": "2026-06-23T18:51:30.429440+00:00",
+        "role": "Senior Data Analyst",
+        "coverage": {
+          "essential": "3/3",
+          "important": "3/3",
+          "nice_to_have": "4/4"
+        },
+        "gaps": [],
+        "next_steps": [],
+        "user_skills": [
+          "Python",
+          "SQL",
+          "Web Development",
+          "JavaScript",
+          "HTML",
+          "CSS",
+          "SQLite",
+          "MongoDB",
+          "AWS",
+          "Microsoft Excel",
+          "Leadership",
+          "AI Integration",
+          "Cybersecurity",
+          "Data Analytics",
+          "Cloud Infrastructure",
+          "Teaching",
+          "UX Optimization",
+          "Full-Stack Development",
+          "Resource Discovery Implementation",
+          "Python Workshop Facilitation",
+          "Community Outreach",
+          "Project Management",
+          "Data Mining and Modelling",
+          "Data Storytelling and Visualisation"
+        ]
       }
     ]
   }

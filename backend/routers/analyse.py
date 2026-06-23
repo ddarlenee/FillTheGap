@@ -52,7 +52,18 @@ def analyse(request: AnalyseRequest, authorization: str = Header(...)):
             target_roles = _infer_top_roles(request.resume_text, email)
 
         primary_role = target_roles[0]
-        user_skills = extract_skills(request.resume_text, email)
+
+        if request.user_skill_names is not None:
+            # Skip extraction — caller already knows the skill list (e.g. career progression)
+            from models.schemas import ExtractedSkill as _ES
+            user_skills = [
+                _ES(name=n, evidence="Prior learning and completed goals", confidence="High")
+                for n in request.user_skill_names
+            ]
+        elif request.resume_text:
+            user_skills = extract_skills(request.resume_text, email)
+        else:
+            raise HTTPException(status_code=400, detail="Provide resume_text or user_skill_names.")
 
         role_skill_names = skillsfuture.get_skills_for_role(primary_role)
         if not role_skill_names:

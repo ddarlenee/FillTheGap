@@ -194,7 +194,6 @@ function HistoryCard({ entry: propEntry, onUpdate, onAdvance }: CardProps) {
   const [entry, setEntry] = useState(propEntry)
   const [showAllGaps, setShowAllGaps] = useState(false)
   const [showNextSteps, setShowNextSteps] = useState(false)
-  const [showSkills, setShowSkills] = useState(false)
   const [toggling, setToggling] = useState<number | null>(null)
 
   useEffect(() => { setEntry(propEntry) }, [propEntry])
@@ -349,15 +348,7 @@ function HistoryCard({ entry: propEntry, onUpdate, onAdvance }: CardProps) {
               : `Next steps${totalStepsDone > 0 ? ` (${totalStepsDone}/${steps.length} done)` : ''}`}
           </button>
         )}
-        {userSkills.length > 0 && (
-          <button
-            onClick={() => setShowSkills((v) => !v)}
-            className="text-xs border border-gray-200 text-gray-600 px-3 py-1 rounded-full hover:bg-gray-50 transition-colors"
-          >
-            {showSkills ? 'Hide your skills' : `Your skills (${userSkills.length})`}
-          </button>
-        )}
-      </div>
+        </div>
 
       {/* Next steps */}
       {showNextSteps && steps.length > 0 && (
@@ -393,17 +384,6 @@ function HistoryCard({ entry: propEntry, onUpdate, onAdvance }: CardProps) {
         </div>
       )}
 
-      {/* Your skills */}
-      {showSkills && userSkills.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5">Your skills</p>
-          <div className="flex flex-wrap gap-1">
-            {userSkills.map((s) => (
-              <span key={s} className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded">{s}</span>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -441,7 +421,7 @@ export default function HistoryPage() {
       next_steps: [],
     })
     resetProgress()
-    navigate('/career-progression')
+    navigate('/career-progression', { state: { from: 'history' } })
   }
 
   return (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useSessionStore } from '../store/useSessionStore'
 import { postAnalyse } from '../api/analyse'
 import SkillCard from '../components/SkillCard'
@@ -9,8 +9,10 @@ import SkillRadarChart from '../components/SkillRadarChart'
 
 export default function GapDashboardPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { analysisResult, resumeText, setAnalysisResult, setProgressResult } = useSessionStore()
   const [showRoles, setShowRoles] = useState(false)
+  const fromCareer = (location.state as any)?.from === 'career'
   const [switching, setSwitching] = useState<string | null>(null)
   const [allRoles, setAllRoles] = useState<string[]>([])
 
@@ -58,6 +60,14 @@ export default function GapDashboardPage() {
 
       <div className="flex items-center justify-between mb-6">
         <div>
+          {fromCareer && (
+            <button
+              onClick={() => navigate('/history')}
+              className="text-blue-600 text-sm hover:underline mb-2 block"
+            >
+              ← Back to History
+            </button>
+          )}
           <h1 className="text-2xl font-bold text-gray-900">Skills Gap Analysis</h1>
           <p className="text-gray-500 text-sm mt-1">
             Target: <span className="font-medium text-gray-700">{currentRole}</span>

@@ -1,13 +1,16 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useSessionStore } from '../store/useSessionStore'
 import { postProgress } from '../api/progress'
+import { postAnalyse } from '../api/analyse'
 import CareerLadder from '../components/CareerLadder'
 
 export default function CareerProgressionPage() {
   const navigate = useNavigate()
-  const { analysisResult, progressResult, setProgressResult } = useSessionStore()
+  const location = useLocation()
+  const { analysisResult, progressResult, setProgressResult, setAnalysisResult, resetProgress } = useSessionStore()
+  const [startingRole, setStartingRole] = useState<string | null>(null)
 
   const mutation = useMutation({
     mutationFn: () => postProgress({
@@ -25,17 +28,46 @@ export default function CareerProgressionPage() {
 
   if (!analysisResult) return null
 
+  const from = (location.state as any)?.from ?? 'gap-dashboard'
+  const backPath = from === 'history' ? '/history' : '/gap-dashboard'
+
+  async function handleStartNow(role: string) {
+    if (startingRole) return
+    setStartingRole(role)
+    try {
+      const result = await postAnalyse({
+        user_skill_names: analysisResult!.user_skills.map((s) => s.name),
+        target_role: role,
+      })
+      setAnalysisResult(result)
+      resetProgress()
+      navigate('/gap-dashboard', { state: { from: 'career' } })
+    } catch {
+      setStartingRole(null)
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="flex items-center gap-4 mb-8">
         <button
-          onClick={() => navigate('/gap-dashboard')}
+          onClick={() => navigate(backPath)}
           className="text-blue-600 text-sm hover:underline"
         >
-          ← Back to Gap Analysis
+          ← Back
         </button>
         <h1 className="text-2xl font-bold text-gray-900">Your Career Path</h1>
       </div>
+
+      {startingRole && (
+        <div className="fixed inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="text-center">
+            <div className="text-gray-600 font-medium mb-1">Analysing skills gap for</div>
+            <div className="text-blue-700 font-bold text-lg">{startingRole}</div>
+            <div className="text-gray-400 text-sm mt-2">This takes ~20 seconds…</div>
+          </div>
+        </div>
+      )}
 
       {mutation.isPending && (
         <div className="text-center py-16 text-gray-400">
@@ -69,6 +101,8 @@ export default function CareerProgressionPage() {
             immediateNext={progressResult.immediate_next}
             fullLadder={progressResult.full_ladder}
             longTermDestination={progressResult.long_term_destination}
+            onStartNow={handleStartNow}
+            startingRole={startingRole}
           />
         </>
       )}
