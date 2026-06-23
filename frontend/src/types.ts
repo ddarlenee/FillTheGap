@@ -45,12 +45,19 @@ export interface Milestone {
   skill_focus: string
 }
 
+export interface CareerNextStep {
+  skill: string
+  action: string
+  summary?: string
+}
+
 export interface CareerRung {
   role: string
   transferability_score: number
   skill_delta: string[]
   why_good_fit: string
   milestones: Milestone[]
+  next_steps: CareerNextStep[]
 }
 
 export interface ProgressResponse {
