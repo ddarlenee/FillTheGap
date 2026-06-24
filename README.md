@@ -19,7 +19,7 @@ Existing tools give generic career advice. SkillsFuture publishes detailed, role
 
 ## The Solution
 
-FillTheGap connects your resume to Singapore's SkillsFuture dataset and gives you a personalised, actionable skills gap analysis in ~30 seconds.
+FillTheGap connects your resume to Singapore's SkillsFuture dataset (https://jobsandskills.skillsfuture.gov.sg/skills-frameworks#download-the-latest-skills-framework-dataset) and gives you a personalised, actionable skills gap analysis in ~30 seconds.
 
 1. **Upload your resume** (PDF or paste text)
 2. **AI extracts your skills** with evidence from your own resume text
