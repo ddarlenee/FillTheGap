@@ -1,51 +1,42 @@
-import json
 import uuid
-from pathlib import Path
 from datetime import datetime, timedelta, timezone
-from passlib.context import CryptContext
 from jose import jwt, JWTError
 from config import settings
+from services.supabase_client import get_supabase
 
 ALGORITHM = "HS256"
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-USERS_FILE = Path(__file__).parent.parent / "data" / "users.json"
-
-
-def _load_users() -> dict:
-    if not USERS_FILE.exists():
-        USERS_FILE.parent.mkdir(exist_ok=True)
-        return {}
-    return json.loads(USERS_FILE.read_text())
-
-
-def _save_users(users: dict):
-    USERS_FILE.write_text(json.dumps(users, indent=2))
+def _get_user_id(email: str) -> str | None:
+    res = get_supabase().table("user_profiles").select("id").eq("email", email).execute()
+    return res.data[0]["id"] if res.data else None
 
 
 def register_user(email: str, password: str, name: str) -> dict:
-    users = _load_users()
-    if email in users:
-        raise ValueError("Email already registered")
-    user_id = str(uuid.uuid4())
-    users[email] = {
-        "id": user_id,
-        "email": email,
-        "name": name,
-        "hashed_password": pwd_context.hash(password),
-        "history": [],
-    }
-    _save_users(users)
+    sb = get_supabase()
+    try:
+        auth_resp = sb.auth.admin.create_user({
+            "email": email,
+            "password": password,
+            "email_confirm": True,
+        })
+    except Exception as e:
+        raise ValueError("Email already registered") from e
+    user_id = auth_resp.user.id
+    sb.table("user_profiles").insert({"id": user_id, "email": email, "name": name}).execute()
     return {"id": user_id, "email": email, "name": name}
 
 
 def login_user(email: str, password: str) -> dict:
-    users = _load_users()
-    user = users.get(email)
-    if not user or not pwd_context.verify(password, user["hashed_password"]):
+    sb = get_supabase()
+    try:
+        auth_resp = sb.auth.sign_in_with_password({"email": email, "password": password})
+    except Exception:
         raise ValueError("Invalid email or password")
-    return {"id": user["id"], "email": email, "name": user["name"]}
+    user_id = auth_resp.user.id
+    profile = sb.table("user_profiles").select("name").eq("id", user_id).execute()
+    name = profile.data[0]["name"] if profile.data else email
+    return {"id": user_id, "email": email, "name": name}
 
 
 def create_token(user: dict) -> str:
@@ -74,11 +65,10 @@ def save_analysis(
     user_skills: list | None = None,
     transferability_score: int | None = None,
 ):
-    users = _load_users()
-    if email not in users:
+    user_id = _get_user_id(email)
+    if not user_id:
         return
 
-    # Normalise gaps to [{skill, tier}] regardless of what came in
     structured_gaps = []
     for g in gaps:
         if isinstance(g, dict):
@@ -86,7 +76,6 @@ def save_analysis(
         else:
             structured_gaps.append({"skill": str(g), "tier": "Important"})
 
-    # Normalise next_steps to [{text, skill, tier, completed}]
     structured_steps = []
     for s in (next_steps or []):
         if hasattr(s, "model_dump"):
@@ -102,9 +91,9 @@ def save_analysis(
         else:
             structured_steps.append({"summary": "", "text": str(s), "skill": "", "tier": "Important", "completed": False})
 
-    entry: dict = {
+    row = {
         "id": str(uuid.uuid4()),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "user_id": user_id,
         "role": role,
         "coverage": coverage,
         "gaps": structured_gaps,
@@ -112,89 +101,81 @@ def save_analysis(
         "user_skills": user_skills or [],
     }
     if transferability_score is not None:
-        entry["transferability_score"] = transferability_score
-    users[email]["history"].append(entry)
-    _save_users(users)
+        row["transferability_score"] = transferability_score
+
+    get_supabase().table("analysis_history").insert(row).execute()
+
+
+def get_history(email: str) -> list:
+    user_id = _get_user_id(email)
+    if not user_id:
+        return []
+    res = get_supabase().table("analysis_history").select("*").eq("user_id", user_id).order("created_at").execute()
+    return res.data or []
 
 
 def complete_step(email: str, entry_id: str, step_index: int) -> dict | None:
-    """
-    Mark a next-step as completed. If the step has a target skill:
-    - add it to user_skills
-    - remove it from gaps
-    - increment the tier's coverage numerator
-    Returns the updated history entry, or None if not found.
-    """
-    users = _load_users()
-    user = users.get(email)
-    if not user:
+    user_id = _get_user_id(email)
+    if not user_id:
+        return None
+    sb = get_supabase()
+    res = sb.table("analysis_history").select("*").eq("id", entry_id).eq("user_id", user_id).execute()
+    if not res.data:
         return None
 
-    for entry in user["history"]:
-        if entry["id"] != entry_id:
-            continue
+    entry = res.data[0]
+    steps = entry.get("next_steps", [])
+    if step_index < 0 or step_index >= len(steps):
+        return None
 
-        steps = entry.get("next_steps", [])
-        if step_index < 0 or step_index >= len(steps):
-            return None
+    step = steps[step_index]
+    if not isinstance(step, dict):
+        step = {"text": str(step), "skill": "", "completed": False}
+        steps[step_index] = step
 
-        step = steps[step_index]
+    was_completed = bool(step.get("completed", False))
+    step["completed"] = not was_completed
+    skill = step.get("skill", "")
 
-        # Normalise to dict in-place
-        if not isinstance(step, dict):
-            step = {"text": str(step), "skill": "", "completed": False}
-            steps[step_index] = step
-
-        # Toggle: check → uncheck or uncheck → check
-        was_completed = bool(step.get("completed", False))
-        step["completed"] = not was_completed
-        skill = step.get("skill", "")
-
-        if skill:
-            user_skills: list = entry.get("user_skills", [])
-            gaps: list = entry.get("gaps", [])
-
-            if not was_completed:
-                # Completing: add skill, remove from gaps, increment coverage
-                if skill not in user_skills:
-                    user_skills.append(skill)
-                    entry["user_skills"] = user_skills
-
-                gap_tier = None
-                new_gaps = []
-                for g in gaps:
-                    if isinstance(g, dict):
-                        if g.get("skill") == skill:
-                            gap_tier = g.get("tier", "Important")
-                        else:
-                            new_gaps.append(g)
+    if skill:
+        user_skills = entry.get("user_skills", [])
+        gaps = entry.get("gaps", [])
+        if not was_completed:
+            if skill not in user_skills:
+                user_skills.append(skill)
+                entry["user_skills"] = user_skills
+            gap_tier = None
+            new_gaps = []
+            for g in gaps:
+                if isinstance(g, dict):
+                    if g.get("skill") == skill:
+                        gap_tier = g.get("tier", "Important")
                     else:
-                        if str(g) != skill:
-                            new_gaps.append(g)
-                        else:
-                            gap_tier = "Important"
-                entry["gaps"] = new_gaps
+                        new_gaps.append(g)
+                else:
+                    if str(g) != skill:
+                        new_gaps.append(g)
+                    else:
+                        gap_tier = "Important"
+            entry["gaps"] = new_gaps
+            if gap_tier:
+                _adjust_coverage(entry, gap_tier, delta=+1)
+        else:
+            if skill in user_skills:
+                user_skills.remove(skill)
+                entry["user_skills"] = user_skills
+            gap_tier = step.get("tier", "Important")
+            gaps.append({"skill": skill, "tier": gap_tier})
+            entry["gaps"] = gaps
+            _adjust_coverage(entry, gap_tier, delta=-1)
 
-                if gap_tier:
-                    _adjust_coverage(entry, gap_tier, delta=+1)
-
-            else:
-                # Uncompleting: remove skill, add back to gaps, decrement coverage
-                if skill in user_skills:
-                    user_skills.remove(skill)
-                    entry["user_skills"] = user_skills
-
-                # Use the tier stored on the step itself (added in new format)
-                gap_tier = step.get("tier", "Important")
-                gaps.append({"skill": skill, "tier": gap_tier})
-                entry["gaps"] = gaps
-
-                _adjust_coverage(entry, gap_tier, delta=-1)
-
-        _save_users(users)
-        return entry
-
-    return None
+    sb.table("analysis_history").update({
+        "next_steps": steps,
+        "gaps": entry["gaps"],
+        "user_skills": entry["user_skills"],
+        "coverage": entry["coverage"],
+    }).eq("id", entry_id).execute()
+    return entry
 
 
 def _adjust_coverage(entry: dict, tier: str, delta: int):
@@ -211,8 +192,3 @@ def _adjust_coverage(entry: dict, tier: str, delta: int):
         entry["coverage"][tier_key] = f"{max(0, min(have + delta, total))}/{total}"
     except ValueError:
         pass
-
-
-def get_history(email: str) -> list:
-    users = _load_users()
-    return users.get(email, {}).get("history", [])
