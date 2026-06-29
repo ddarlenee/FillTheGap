@@ -1,8 +1,11 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     openai_api_key: str
+    supabase_url: str
+    supabase_service_key: str
     skillsfuture_data_dir: str = "data/skillsfuture"
     log_dir: str = "logs"
     jwt_secret: str = "change-me-in-production"
@@ -10,5 +13,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = Path(__file__).parent / ".env"
+
 
 settings = Settings()
