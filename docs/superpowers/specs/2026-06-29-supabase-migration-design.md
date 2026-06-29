@@ -95,7 +95,7 @@ The JWT payload `id` field will now be the Supabase UUID (real UUID from `auth.u
 | `backend/config.py` | Add `supabase_url` and `supabase_service_key` fields |
 | `backend/services/auth_service.py` | **Full rewrite** — remove JSON file logic, use Supabase Auth + DB |
 | `backend/services/session_store.py` | **Rewrite** — `upsert`/`select` on `sessions` table |
-| `backend/services/interaction_logger.py` | **Rewrite** — `insert` into `interaction_logs` table; function signature gains `user_id: str` param since the table links by UUID, not email |
+| `backend/services/interaction_logger.py` | **Rewrite** — `insert` into `interaction_logs` table; signature unchanged (`session_id` = email), UUID resolved internally via `user_profiles` lookup to avoid changing 6 callers |
 | `backend/requirements.txt` | Add `supabase>=2.0.0` |
 | `backend/.env.example` | Add `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` |
 | `backend/.gitignore` | Add `data/users.json`, `sessions/`, `logs/` |
