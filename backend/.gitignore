@@ -1,12 +1,17 @@
 *.env
 *.db
-sessions/*
-!sessions/.gitkeep
-logs/*
-!logs/.gitkeep
-!logs/sample/
-logs/sample/*.jsonl
+
+# User data — never commit
+data/users.json
+sessions/*.json
+logs/*.jsonl
+
+# Preserve sample data and utility files
+sessions/.gitkeep
+logs/.gitkeep
+logs/sample/
 !logs/sample/sample-session.jsonl
+
 __pycache__/
 .pytest_cache/
 *.pyc
