@@ -38,6 +38,25 @@ These documents reflect the AI-human design loop: the human defined goals and co
 ---
 
 ## Human-Human Collaboration
+Soon Zi Ni Darlene
+- ideation
+- implementation of baseline code
+- resume parsing
+- tiered gap analysis
+- evidence-backed skills
+- role readiness bar
+- career progression ladder
+- history & progress tracking
+- my skills page
+
+ALicia Goh Jin Bao
+- semantic gap matching
+- improved UI
+- code testing
+
+Suh Sumin
+- login & authentication
+- overall competency chart
 
 ### Git commit history
 
