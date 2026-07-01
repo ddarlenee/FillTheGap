@@ -65,4 +65,5 @@ export interface ProgressResponse {
   immediate_next: CareerRung
   full_ladder: CareerRung[]
   long_term_destination: string
+  current_role_ready: boolean
 }

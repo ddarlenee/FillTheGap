@@ -75,3 +75,4 @@ class ProgressResponse(BaseModel):
     immediate_next: CareerRung
     full_ladder: list[CareerRung]
     long_term_destination: str
+    current_role_ready: bool = False

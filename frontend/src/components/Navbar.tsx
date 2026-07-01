@@ -1,12 +1,41 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSessionStore } from '../store/useSessionStore'
+import { fetchHistory } from '../api/auth'
+import type { AnalyseResponse } from '../types'
 
 export default function Navbar() {
   const navigate = useNavigate()
-  const { userEmail, userName, logout } = useSessionStore()
+  const { token, userEmail, userName, logout, setAnalysisResult, resetProgress } = useSessionStore()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+
+  async function handleViewCareerPath() {
+    setOpen(false)
+    if (!token) return
+    const history = await fetchHistory(token)
+    if (history.length === 0) { navigate('/history'); return }
+
+    // Always rehydrate from the LATEST history entry and force a fresh
+    // /api/progress call (via resetProgress) rather than restoring a cached
+    // ladder — a cached ladder can go stale relative to actual history (e.g.
+    // it may still reflect an earlier, already-completed stage), which let
+    // the backend's readiness check be evaluated against the wrong entry and
+    // allowed skipping the user's real, incomplete current stage.
+    const latest = history[history.length - 1]
+    const latestSkills: string[] = latest.user_skills ?? []
+    const restored: AnalyseResponse = {
+      target_roles: [latest.role],
+      user_skills: latestSkills.map((name) => ({ name, evidence: 'Restored from history', confidence: 'High' })),
+      tiered_role_skills: [],
+      coverage_score: { essential: '', important: '', nice_to_have: '' },
+      gaps: [],
+      next_steps: [],
+    }
+    setAnalysisResult(restored)
+    resetProgress()
+    navigate('/career-progression', { state: { from: 'navbar', sourceEntryId: latest.id } })
+  }
 
   useEffect(() => {
     function close(e: MouseEvent) {
@@ -59,6 +88,15 @@ export default function Navbar() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   History
+                </button>
+                <button
+                  onClick={handleViewCareerPath}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  Career Path
                 </button>
                 <div className="border-t border-gray-100 my-1" />
                 <button

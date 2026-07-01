@@ -16,24 +16,34 @@ router = APIRouter()
 openai_client = OpenAI(api_key=settings.openai_api_key)
 
 def _infer_top_roles(resume_text: str, user_key: str) -> list[str]:
+    # Send every role, not a slice — all_roles is alphabetically sorted, so
+    # truncating (e.g. all_roles[:80]) silently excludes most of the ~1880
+    # roles from consideration and biases results toward early-alphabet titles.
     all_roles = skillsfuture.get_roles()
-    roles_list = "\n".join(f"- {r}" for r in all_roles[:80])
+    roles_list = "\n".join(f"- {r}" for r in all_roles)
     prompt = (
         f"Resume:\n{resume_text[:2000]}\n\n"
         f"Available roles:\n{roles_list}\n\n"
-        'Return the 3 best-matching roles as JSON: {"roles": ["role1", "role2", "role3"]}'
+        'Return the 3 roles that best match the skills and experience in the resume, '
+        'ranked most-relevant first, as JSON: {"roles": ["role1", "role2", "role3"]}'
     )
     response = openai_client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You match resumes to job roles. Return only valid JSON."},
+            {"role": "system", "content": "You match resumes to job roles based on skills and experience. Return only valid JSON."},
             {"role": "user", "content": prompt},
         ],
         response_format={"type": "json_object"},
     )
     content = response.choices[0].message.content
     log_interaction(user_key, "role_inference", prompt, content)
-    return json.loads(content).get("roles", all_roles[:3])
+    roles = json.loads(content).get("roles")
+    if not roles:
+        # Don't silently fall back to the first 3 alphabetically-sorted roles —
+        # that produced nonsense (e.g. "1st Assistant Cameraman") unrelated to
+        # the resume. Surface a real error instead.
+        raise ValueError("Role inference returned no matching roles")
+    return roles
 
 @router.post("/analyse", response_model=AnalyseResponse)
 def analyse(request: AnalyseRequest, authorization: str = Header(...)):

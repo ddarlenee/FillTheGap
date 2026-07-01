@@ -11,6 +11,8 @@ export default function CareerProgressionPage() {
   const location = useLocation()
   const { analysisResult, progressResult, setProgressResult, resetProgress } = useSessionStore()
   const [startingRole, setStartingRole] = useState<string | null>(null)
+  const [startError, setStartError] = useState<string | null>(null)
+  const [startErrorTone, setStartErrorTone] = useState<'encourage' | 'error'>('error')
 
   const mutation = useMutation({
     mutationFn: () => postProgress({
@@ -29,11 +31,15 @@ export default function CareerProgressionPage() {
   if (!analysisResult) return null
 
   const from = (location.state as any)?.from ?? 'gap-dashboard'
-  const backPath = from === 'history' ? '/history' : '/gap-dashboard'
+  const sourceEntryId = (location.state as any)?.sourceEntryId as string | undefined
+  const backPath = from === 'history' || from === 'navbar' ? '/history' : '/gap-dashboard'
 
   async function handleStartNow(role: string) {
     if (startingRole) return
+    if (!progressResult?.current_role_ready) return
     setStartingRole(role)
+    setStartError(null)
+    setStartErrorTone('error')
 
     const rung =
       progressResult?.immediate_next.role === role
@@ -46,10 +52,35 @@ export default function CareerProgressionPage() {
       // Persist the career stage directly from ladder data — no LLM gap analysis needed.
       // transferability_score becomes the fixed readiness base; skill_delta becomes the
       // required gaps; career next_steps become the history checklist.
-      await saveCareerStage(rung, analysisResult!.user_skills.map((s) => s.name))
+      await saveCareerStage(rung, analysisResult!.user_skills.map((s) => s.name), sourceEntryId)
       resetProgress()
       navigate('/history')
-    } catch {
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        // Already started this stage (e.g. revisited via the Career Path nav link) —
+        // it already lives in History, so just take them there instead of erroring.
+        resetProgress()
+        navigate('/history')
+        return
+      }
+      if (err?.response?.status === 403) {
+        const detail: string = err.response.data?.detail ?? ''
+        if (detail.toLowerCase().includes('gap')) {
+          // Current role isn't fully complete yet — encourage rather than scold.
+          setStartErrorTone('encourage')
+          setStartError(
+            "You're not quite ready for this one yet — a few essential and important skills in your current role are still open. Head back to History and check them off, then come straight back here. You're closer than you think! 💪"
+          )
+        } else {
+          // Stale/mismatched cached career path — ask them to refresh, not a hard error.
+          setStartErrorTone('encourage')
+          setStartError("Your career path needs a quick refresh — head back to History and reopen your Career Path to continue.")
+        }
+        setStartingRole(null)
+        return
+      }
+      setStartErrorTone('error')
+      setStartError('Something went wrong starting this stage. Please try again.')
       setStartingRole(null)
     }
   }
@@ -65,6 +96,24 @@ export default function CareerProgressionPage() {
         </button>
         <h1 className="text-2xl font-bold text-gray-900">Your Career Path</h1>
       </div>
+
+      {startError && startErrorTone === 'encourage' && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+          <p className="text-sm text-amber-800">{startError}</p>
+          <button
+            onClick={() => navigate('/history')}
+            className="mt-2 text-sm font-medium text-amber-700 hover:underline"
+          >
+            ← Back to History
+          </button>
+        </div>
+      )}
+
+      {startError && startErrorTone === 'error' && (
+        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5">
+          {startError}
+        </p>
+      )}
 
       {startingRole && (
         <div className="fixed inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center pointer-events-none">
@@ -110,6 +159,7 @@ export default function CareerProgressionPage() {
             longTermDestination={progressResult.long_term_destination}
             onStartNow={handleStartNow}
             startingRole={startingRole}
+            readyToAdvance={progressResult.current_role_ready}
           />
         </>
       )}

@@ -3,6 +3,36 @@ import { useNavigate } from 'react-router-dom'
 import { useSessionStore } from '../store/useSessionStore'
 import { login, register } from '../api/auth'
 
+function getAuthErrorMessage(e: any, isLogin: boolean): string {
+  if (!e?.response) {
+    // Axios throws without a `response` when the request never got one back
+    // (server down, wrong port, CORS block, dropped connection).
+    return "Can't reach the server right now. Check your connection and try again."
+  }
+
+  const { status, data } = e.response
+  const detail = data?.detail
+
+  if (typeof detail === 'string' && detail) return detail
+
+  if (Array.isArray(detail) && detail.length > 0) {
+    // FastAPI/Pydantic 422 validation errors come back as a list of
+    // {loc, msg} objects rather than a plain string.
+    const field = Array.isArray(detail[0]?.loc) ? detail[0].loc[detail[0].loc.length - 1] : undefined
+    if (field === 'email') return 'Please enter a valid email address.'
+    if (field === 'password') return 'Please check your password and try again.'
+    return detail[0]?.msg || 'Please check your details and try again.'
+  }
+
+  if (status >= 500) {
+    return 'The server ran into a problem on our end. Please try again in a moment.'
+  }
+
+  return isLogin
+    ? 'Could not sign you in. Please check your email and password.'
+    : 'Could not create your account. Please check your details and try again.'
+}
+
 export default function AuthPage() {
   const navigate = useNavigate()
   const { setAuth } = useSessionStore()
@@ -23,7 +53,7 @@ export default function AuthPage() {
       setAuth(res.access_token, res.user.email, res.user.name)
       navigate('/')
     } catch (e: any) {
-      setError(e?.response?.data?.detail ?? 'Something went wrong')
+      setError(getAuthErrorMessage(e, isLogin))
     } finally {
       setLoading(false)
     }

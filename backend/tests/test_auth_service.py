@@ -40,7 +40,11 @@ def test_login_user_returns_user_dict():
     from services.auth_service import login_user
     sb, t = _make_sb("uuid-xyz", "Carol")
     t.execute.return_value = MagicMock(data=[{"name": "Carol"}])
-    with patch("services.auth_service.get_supabase", return_value=sb):
+    # sign_in_with_password runs on an isolated client (new_supabase_client) so it
+    # can't mutate the shared service-role client's session; profile lookup still
+    # goes through get_supabase(). Both are mocked to the same double here.
+    with patch("services.auth_service.get_supabase", return_value=sb), \
+         patch("services.auth_service.new_supabase_client", return_value=sb):
         result = login_user("carol@example.com", "pass")
     assert result == {"id": "uuid-xyz", "email": "carol@example.com", "name": "Carol"}
 
@@ -49,7 +53,8 @@ def test_login_user_raises_on_bad_credentials():
     from services.auth_service import login_user
     sb, t = _make_sb()
     sb.auth.sign_in_with_password.side_effect = Exception("Invalid credentials")
-    with patch("services.auth_service.get_supabase", return_value=sb):
+    with patch("services.auth_service.get_supabase", return_value=sb), \
+         patch("services.auth_service.new_supabase_client", return_value=sb):
         with pytest.raises(ValueError, match="Invalid email or password"):
             login_user("bad@example.com", "wrong")
 

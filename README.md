@@ -61,7 +61,7 @@ FillTheGap connects your resume to Singapore's SkillsFuture dataset (https://job
 | PDF parsing | PyMuPDF |
 | Auth | [Supabase Auth](https://supabase.com/auth) (email/password) + JWT tokens (24h expiry) |
 | Database | [Supabase PostgreSQL](https://supabase.com/database) (4 tables: user_profiles, analysis_history, sessions, interaction_logs) |
-| Testing | pytest + httpx |
+| Testing | pytest + httpx (48 tests) — see [Testing](#testing) |
 
 ### Frontend
 
@@ -259,6 +259,23 @@ When a user advances to the next career stage via the ladder, the analysis **doe
 - Role readiness never starts at 100%
 - The base readiness = actual % of current skills that transfer
 - Only completing the required next steps (ticking off checklist items) can push readiness to 100%
+
+---
+
+## Testing
+
+### Backend (automated)
+
+48 pytest tests cover skill extraction/ranking/gap matching, the SkillsFuture loader, auth service (register/login/JWT/career-stage readiness gating), career ladder generation, session/interaction storage, and the API endpoints (including regression tests for the top-3-role-matching fix and the career-stage locking fix).
+
+```bash
+cd backend
+pytest tests/ -q
+```
+
+### Frontend (manual)
+
+There's no automated frontend test suite yet. `docs/QA_TEST_CASES.md` is a manual QA checklist covering every user flow — auth, upload, role selection, gap dashboard, career progression, history, skills, navbar, and cross-user security checks — with a "known regression areas" section flagging bugs that have broken before and must be re-verified before shipping.
 
 ---
 

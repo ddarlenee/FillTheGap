@@ -19,9 +19,9 @@ interface GapRecord {
 
 interface HistoryEntry {
   id: string
-  timestamp: string
+  created_at: string
   role: string
-  coverage: { essential: string; important: string; nice_to_have?: string }
+  coverage: { essential: string; important: string; nice_to_have?: string; source_entry_id?: string | null }
   gaps: (string | GapRecord)[]
   next_steps?: (string | Partial<NextStep>)[]
   user_skills?: string[]
@@ -195,10 +195,11 @@ function StepItem({ step, globalIdx, toggling, onToggle }: StepItemProps) {
 interface CardProps {
   entry: HistoryEntry
   onUpdate: (updated: HistoryEntry) => void
-  onAdvance: (role: string, skills: string[]) => void
+  onAdvance: (role: string, skills: string[], entryId: string) => void
+  hasAdvanced: boolean
 }
 
-function HistoryCard({ entry: propEntry, onUpdate, onAdvance }: CardProps) {
+function HistoryCard({ entry: propEntry, onUpdate, onAdvance, hasAdvanced }: CardProps) {
   const [entry, setEntry] = useState(propEntry)
   const [showAllGaps, setShowAllGaps] = useState(false)
   const [showNextSteps, setShowNextSteps] = useState(false)
@@ -285,7 +286,7 @@ function HistoryCard({ entry: propEntry, onUpdate, onAdvance }: CardProps) {
       <div className="flex items-start justify-between">
         <div>
           <p className="font-semibold text-gray-800">{entry.role}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{new Date(entry.timestamp).toLocaleString()}</p>
+          <p className="text-xs text-gray-400 mt-0.5">{new Date(entry.created_at).toLocaleString()}</p>
         </div>
         <div className="text-right text-sm space-y-0.5">
           <p className="text-red-500">Essential: {essHave}/{essTotal}</p>
@@ -315,25 +316,27 @@ function HistoryCard({ entry: propEntry, onUpdate, onAdvance }: CardProps) {
         <div className="rounded-xl border-2 border-green-300 bg-green-50 p-4 text-center space-y-2">
           <p className="text-green-800 font-semibold text-base">You're role-ready for {entry.role}!</p>
           <p className="text-green-700 text-sm">You've closed all essential and important skill gaps. Ready to aim higher?</p>
-          <button
-            onClick={() => {
-              // Exclude skills acquired by ticking off next steps — those are still being
-              // learned and should appear as gaps in the next-stage analysis.
-              const stepSkills = new Set(
-                normalizeSteps(entry.next_steps)
-                  .filter((s) => s.completed && s.skill)
-                  .map((s) => s.skill)
-              )
-              const baseSkills = (entry.user_skills ?? []).filter((s) => !stepSkills.has(s))
-              onAdvance(entry.role, baseSkills)
-            }}
-            className="mt-1 inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-          >
-            What's next? See your career path
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />
-            </svg>
-          </button>
+          {!hasAdvanced && (
+            <button
+              onClick={() => {
+                // Exclude skills acquired by ticking off next steps — those are still being
+                // learned and should appear as gaps in the next-stage analysis.
+                const stepSkills = new Set(
+                  normalizeSteps(entry.next_steps)
+                    .filter((s) => s.completed && s.skill)
+                    .map((s) => s.skill)
+                )
+                const baseSkills = (entry.user_skills ?? []).filter((s) => !stepSkills.has(s))
+                onAdvance(entry.role, baseSkills, entry.id)
+              }}
+              className="mt-1 inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            >
+              What's next? See your career path
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />
+              </svg>
+            </button>
+          )}
         </div>
       )}
 
@@ -428,7 +431,13 @@ export default function HistoryPage() {
     setHistory((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
   }
 
-  function handleAdvance(role: string, skills: string[]) {
+  // Entries the user has already advanced from (their next stage exists in history)
+  // shouldn't show the "What's next" prompt again.
+  const advancedEntryIds = new Set(
+    history.map((e) => e.coverage?.source_entry_id).filter((id): id is string => !!id)
+  )
+
+  function handleAdvance(role: string, skills: string[], entryId: string) {
     const syntheticSkills: ExtractedSkill[] = skills.map((name) => ({
       name,
       evidence: 'Completed via learning goals',
@@ -443,7 +452,7 @@ export default function HistoryPage() {
       next_steps: [],
     })
     resetProgress()
-    navigate('/career-progression', { state: { from: 'history' } })
+    navigate('/career-progression', { state: { from: 'history', sourceEntryId: entryId } })
   }
 
   return (
@@ -471,7 +480,13 @@ export default function HistoryPage() {
 
       <div className="space-y-4">
         {history.slice().reverse().map((entry) => (
-          <HistoryCard key={entry.id} entry={entry} onUpdate={handleEntryUpdate} onAdvance={handleAdvance} />
+          <HistoryCard
+            key={entry.id}
+            entry={entry}
+            onUpdate={handleEntryUpdate}
+            onAdvance={handleAdvance}
+            hasAdvanced={advancedEntryIds.has(entry.id)}
+          />
         ))}
       </div>
     </div>

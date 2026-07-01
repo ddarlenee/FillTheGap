@@ -5,7 +5,7 @@ import { fetchHistory } from '../api/auth'
 
 interface HistoryEntry {
   id: string
-  timestamp: string
+  created_at: string
   role: string
   user_skills?: string[]
   next_steps?: { skill?: string; completed?: boolean }[]
@@ -76,7 +76,7 @@ export default function SkillsPage() {
             </h2>
             {latestEntry && (
               <span className="text-xs text-gray-400">
-                Last updated {new Date(latestEntry.timestamp).toLocaleDateString()}
+                Last updated {new Date(latestEntry.created_at).toLocaleDateString()}
               </span>
             )}
           </div>

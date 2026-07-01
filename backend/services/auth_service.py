@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 from config import settings
-from services.supabase_client import get_supabase
+from services.supabase_client import get_supabase, new_supabase_client
 
 ALGORITHM = "HS256"
 
@@ -23,17 +23,23 @@ def register_user(email: str, password: str, name: str) -> dict:
     except Exception as e:
         raise ValueError("Email already registered") from e
     user_id = auth_resp.user.id
-    sb.table("user_profiles").insert({"id": user_id, "email": email, "name": name}).execute()
+    try:
+        sb.table("user_profiles").insert({"id": user_id, "email": email, "name": name}).execute()
+    except Exception:
+        sb.auth.admin.delete_user(user_id)
+        raise
     return {"id": user_id, "email": email, "name": name}
 
 
 def login_user(email: str, password: str) -> dict:
-    sb = get_supabase()
+    # Use a throwaway client for sign-in — sign_in_with_password mutates the
+    # client's session, and the shared client must stay on the service role.
     try:
-        auth_resp = sb.auth.sign_in_with_password({"email": email, "password": password})
+        auth_resp = new_supabase_client().auth.sign_in_with_password({"email": email, "password": password})
     except Exception:
         raise ValueError("Invalid email or password")
     user_id = auth_resp.user.id
+    sb = get_supabase()
     profile = sb.table("user_profiles").select("name").eq("id", user_id).execute()
     name = profile.data[0]["name"] if profile.data else email
     return {"id": user_id, "email": email, "name": name}
@@ -112,6 +118,29 @@ def get_history(email: str) -> list:
         return []
     res = get_supabase().table("analysis_history").select("*").eq("user_id", user_id).order("created_at").execute()
     return res.data or []
+
+
+def _coverage_complete(raw) -> bool:
+    parts = str(raw or "0/0").split("/")
+    if len(parts) != 2:
+        return False
+    try:
+        have, total = int(parts[0]), int(parts[1])
+    except ValueError:
+        return False
+    return have >= total
+
+
+def is_role_ready(entry: dict) -> bool:
+    """
+    True once every essential and important skill gap is closed for this entry.
+    complete_step() keeps `coverage` in sync with ticked-off next_steps, so this
+    works for both resume-based entries and career-stage entries alike — it's
+    the server-side source of truth for "has this role actually been earned",
+    used to gate advancing to the next career stage.
+    """
+    cov = entry.get("coverage") or {}
+    return _coverage_complete(cov.get("essential")) and _coverage_complete(cov.get("important"))
 
 
 def complete_step(email: str, entry_id: str, step_index: int) -> dict | None:
